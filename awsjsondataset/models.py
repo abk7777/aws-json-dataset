@@ -1,10 +1,13 @@
 import os
+import sys
 import logging
 from typing import List, Union, Iterator, Optional
 from pathlib import Path
+from functools import cached_property
 import json
 import boto3
 from exceptions import InvalidJsonDataset
+from constants import service_size_limits_kb
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,6 +47,19 @@ class JsonDataset:
 
         self.num_records: int = len(self.data)
 
+    @staticmethod
+    def _get_record_size_kb(record: dict) -> int:
+        return round(sys.getsizeof(json.dumps(record)))/1000
+
+    @cached_property
+    def _records_by_size_kb(self):
+        _records_by_size_kb = [ (record, self._get_record_size_kb(record)) for record in self.data ]
+        _records_by_size_kb.sort(key=lambda record: record[1])
+        return _records_by_size_kb
+
+    @cached_property
+    def _max_record_size_kb(self):
+        return max([ item[1] for item in self._records_by_size_kb ])
 
     def _read_local(self, path: JSONPath) -> JSONDataset:
         with open(path, 'r') as file:
@@ -93,10 +109,23 @@ class AwsJsonDataset(JsonDataset):
         # Set conditional attributes
         self._get_sqs(sqs_queue_url=kwargs.get("sqs_queue_url"))
 
+    @cached_property
+    def _available_services(self):
+        service_status = [ (k, self._max_record_size_kb < v)  for k, v in service_size_limits_kb.items() ]
+        return [ x[0] for x in list(filter(lambda x: x[1] == True, service_status)) ]
+
+
     def _get_sqs(self, sqs_queue_url):
-        self._sqs_queue_url = sqs_queue_url if sqs_queue_url else None
-        self._sqs = self._boto3_session.resource('sqs') if sqs_queue_url else None
-        self._sqs_queue = self._sqs.Queue(self._sqs_queue_url) if sqs_queue_url else None
+        if sqs_queue_url and ('sqs' in self._available_services):
+            if self._max_record_size_kb < service_size_limits_kb["sqs"]:
+                 logger.warn('Service size limit exceeded')
+            self._sqs_queue_url = sqs_queue_url
+            self._sqs = self._boto3_session.resource('sqs')
+            self._sqs_queue = self._sqs.Queue(self._sqs_queue_url)
+        else:
+            self._sqs_queue_url = None
+            self._sqs = None
+            self._sqs_queue = None
 
     def queue_records(self, batch=False):
 
@@ -126,6 +155,10 @@ if __name__ == "__main__":
     queue_url = "https://sqs.us-east-1.amazonaws.com/531868584498/dev-gfe-db-pipeline-FailedAllelesQueue-P0lkITOMth2s"
 
     awsdataset = AwsJsonDataset(path=path, sqs_queue_url=queue_url)
-    awsdataset.queue_records()
+    # awsdataset.queue_records()
+    print(awsdataset._available_services)
+
+    # TODO test without queue url
+    # TODO add max_size_kb
 
     print("")
