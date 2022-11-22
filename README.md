@@ -34,10 +34,11 @@ Stream, publish and store JSON data to various AWS services including:
 * S3
 
 ### To Do
-- [ ] ==Add SQS support==
-  - [ ] `send_message`
-  - [ ] `send_message_batch`
-- [ ] Add SNS support
+- [ ] ==Put service methods in utils.py as static methods, make this a separate package==
+- [x] Add SQS support
+  - [x] `send_message`
+  - [x] `send_messages`
+- [ ] ==Add SNS support==
   - [ ] `publish`
   - [ ] `publish_batch`
 - [ ] Add Kinesis Firehose support
