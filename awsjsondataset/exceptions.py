@@ -11,7 +11,7 @@ class InvalidJsonDataset(ValueError):
         return 'JSON must contain array as top-level element'
 
 class MissingRecords(Exception):
-    """Raised when there is in equality between the expected number of records and actual"""
+    """Raised when there is inequality between the expected number of records and actual"""
 
     def __init__(self, expected: int, actual: int) -> None:
         self.expected: str = expected
