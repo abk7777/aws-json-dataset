@@ -109,7 +109,6 @@ ENV/
 
 ## Python Packaging assets
 docs/
-tests/
 .editorconfig
 .travis.yml
 *.rst
