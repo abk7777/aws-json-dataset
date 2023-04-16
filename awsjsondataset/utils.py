@@ -5,7 +5,11 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 from .types import JSONDataset
-from .exceptions import InvalidJsonDataset, MissingRecords
+from .exceptions import InvalidJsonDataset, MissingRecords, ServiceRecordSizeLimitExceeded
+from .constants import (
+    service_size_limits_bytes,
+    available_services
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,22 +23,15 @@ def get_record_size_bytes(record: dict) -> int:
     """
     return sys.getsizeof(json.dumps(record))
 
-def get_record_size_kb(record: dict) -> int:
-    """Get the size of a record in kilobytes.
 
-    Returns:
-        int: Size of record in kilobytes
-    """
-    return round(sys.getsizeof(json.dumps(record))/1000, 2)
-
-def sort_records_by_size_kb(data: JSONDataset, ascending: bool = True):
-    records_by_size_kb = [(record, get_record_size_kb(record)) for record in data]
-    records_by_size_kb.sort(key=lambda record: record[1], reverse=not ascending)
-    return records_by_size_kb
+def sort_records_by_size_bytes(data: JSONDataset, ascending: bool = True):
+    records_by_size_bytes = [(record, get_record_size_bytes(record)) for record in data]
+    records_by_size_bytes.sort(key=lambda record: record[1], reverse=not ascending)
+    return records_by_size_bytes
 
 
-def max_record_size_kb(data: JSONDataset):
-    return max([ item[1] for item in sort_records_by_size_kb(data=data, ascending=False) ])
+def max_record_size_bytes(data: JSONDataset):
+    return max([ item[1] for item in sort_records_by_size_bytes(data=data, ascending=False) ])
 
 
 def validate_data(data: JSONDataset) -> List[Union[Dict, any]]:
@@ -50,286 +47,313 @@ def validate_data(data: JSONDataset) -> List[Union[Dict, any]]:
         raise InvalidJsonDataset()
     return data
 
-### SQS ###
-def queue_records(client, data: JSONDataset, sqs_queue_url: str):
 
-    if len(data) > 10:
-        return queue_records_batch(client, data, sqs_queue_url)
+def get_available_services_by_limit(service, max_record_size_bytes):
+    service_size_record_limits_bytes = { k: v["max_record_size_bytes"] for k, v in service_size_limits_bytes.items() }
+    service_status = [ (k, max_record_size_bytes < v)  for k, v in service_size_record_limits_bytes.items() ]
+    return [ x[0] for x in list(filter(lambda x: x[1] == True, service_status)) ]
+
+
+def validate_service(service: str, max_record_size_bytes: float) -> str:
+    if service not in available_services:
+        raise ValueError(f"Invalid service: {service}")
     else:
-        counter = 0
-        errors = 0
-
-        for record in data:
-            counter += 1
-            response = client.send_message(
-                QueueUrl=sqs_queue_url,
-                MessageBody=json.dumps(record)
-            )
-
-            if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-                logger.error("Failed to send message")
-                counter -= 1
-                errors += 1
-
-        logger.info(f'{counter} messages queued to {sqs_queue_url}')
-
-
-def queue_records_batch(client, data: JSONDataset, sqs_queue_url: str):
-
-    if len(data) < 10:
-        raise Exception("Batch size must be greater than 10")
-
-    batch = []
-    batch_bytes = 0
-    counter = 0
-    max_bytes = 262144
-
-    # SQS API accepts a max batch size of 10 max payload size of 256 kilobytes
-    for idx, record in enumerate(data):
-        if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 10):
-            batch.append(record)
+        available_services_by_limit = get_available_services_by_limit(service, max_record_size_bytes)
+        if service not in available_services_by_limit:
+            raise ServiceRecordSizeLimitExceeded(service, max_record_size_bytes)
         else:
-            entries = [
-                {
-                    'Id': str(batch_idx),
-                    'MessageBody': json.dumps(message)
-                } for batch_idx, message in enumerate(batch)
-            ]
+            return service
 
-            response = client.send_message_batch(
-                QueueUrl=sqs_queue_url,                
-                Entries=entries)
-            if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-                logger.error("Failed to send message")
-                counter -= 1
-                errors += 1
 
-            counter += len(batch)
-            batch = [record]
+# ### SQS ###
+# def queue_records(client, data: JSONDataset, sqs_queue_url: str):
 
-        batch_bytes = get_record_size_bytes(batch)
+#     if len(data) > 10:
+#         return queue_records_batch(client, data, sqs_queue_url)
+#     else:
+#         counter = 0
+#         errors = 0
 
-    # Publish remaining JSON objects
-    if len(batch) > 0:
-        response = client.send_message_batch(
-            QueueUrl=sqs_queue_url,            
-            Entries=entries)
-        if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-            logger.error("Failed to send message")
-            counter -= len(batch)
-            errors += 1
-        counter += len(batch)
+#         for record in data:
+#             counter += 1
+#             response = client.send_message(
+#                 QueueUrl=sqs_queue_url,
+#                 MessageBody=json.dumps(record)
+#             )
 
-        if counter != idx+1:
-            raise MissingRecords(expected=idx+1, actual=counter)
+#             if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+#                 logger.error("Failed to send message")
+#                 counter -= 1
+#                 errors += 1
 
-### SNS ###
-def publish_record(client, message: dict, topic_arn: str):
-    """Send a message to an SNS topic.
+#         logger.info(f'{counter} messages queued to {sqs_queue_url}')
 
-    Args:
-        client (SNS.Client): Boto3 client for SNS.
-        topic_arn (str): SNS Topic ARN.
-        message (dict): Message dict.
 
-    Raises:
-        error: ClientError
+# def queue_records_batch(client, data: JSONDataset, sqs_queue_url: str):
 
-    Returns:
-        dict: The response from SNS that contains the HTTP status and the list of successful and failed messages.
-    """
-    try:
-        response = client.publish(
-            TopicArn=topic_arn,
-            Message=json.dumps(message)
-        )
-        return response
-    except ClientError as e:
-        logger.error(e)
-        raise e
+#     if len(data) < 10:
+#         raise Exception("Batch size must be greater than 10")
 
-def publish_records_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
-    """Send a batch of messages in a single request to an SNS topic.
-    This request may return overall success even when some messages were not published.
-    The caller must inspect the Successful and Failed lists in the response and
-    republish any failed messages.
+#     batch = []
+#     batch_bytes = 0
+#     counter = 0
+#     max_bytes = service_size_limits_bytes["sqs"]["max_record_size_bytes"]
 
-    Args:
-        client (SNS.Client): Boto3 client for SNS.
-        topic_arn (str): SNS Topic ARN.
-        messages (list): List of messages.
-        message_attributes (list, optional): List of attributes for each message, used for filtering. Defaults to None.
+#     # SQS API accepts a max batch size of 10 max payload size of 256 kilobytes
+#     for idx, record in enumerate(data):
+#         if get_record_size_bytes(record) > service_size_limits_bytes["sqs"]["max_record_size_bytes"]:
+#             raise Exception(f'Record size must be less than {service_size_limits_bytes["sqs"]["max_record_size_bytes"]} bytes')
 
-    Raises:
-        error: ClientError
+#         if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 10):
+#             batch.append(record)
+#         else:
+#             entries = [
+#                 {
+#                     'Id': str(batch_idx),
+#                     'MessageBody': json.dumps(message)
+#                 } for batch_idx, message in enumerate(batch)
+#             ]
 
-    Returns:
-        dict: The response from SNS that contains the HTTP status and the list of successful and failed messages.
-    """
+#             response = client.send_message_batch(
+#                 QueueUrl=sqs_queue_url,                
+#                 Entries=entries)
+#             if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+#                 logger.error("Failed to send message")
+#                 counter -= 1
+#                 errors += 1
 
-    if len(messages) < 10:
-        raise Exception("Batch size must be greater than 10")
+#             counter += len(batch)
+#             batch = [record]
 
-    batch = []
-    batch_bytes = 0
-    counter = 0
-    max_bytes = 262144
+#         batch_bytes = get_record_size_bytes(batch)
 
-    # SNS API accepts a max batch size of 10 max payload size of 256 kilobytes
-    for idx, record in enumerate(messages):
-        if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 10):
-            batch.append(record)
-        else:
-            entries = [
-                {
-                    'Id': str(idx),
-                    'Message': json.dumps(message)
-                } for idx, message in enumerate(batch)
-            ]
+#     # Publish remaining JSON objects
+#     if len(batch) > 0:
+#         response = client.send_message_batch(
+#             QueueUrl=sqs_queue_url,            
+#             Entries=entries)
+#         if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+#             logger.error("Failed to send message")
+#             counter -= len(batch)
+#             errors += 1
+#         counter += len(batch)
 
-            # TODO: Add message attributes
-            # if message_attributes is not None:
-            #     for item, attrs in zip(entries, message_attributes):
-            #         item["MessageAttributes"] = attrs
+#         if counter != idx+1:
+#             raise MissingRecords(expected=idx+1, actual=counter)
 
-            # logger.info(json.dumps(entries, indent=4))
-            logger.info(len(entries))
-            response = client.publish_batch(
-                TopicArn=topic_arn,
-                PublishBatchRequestEntries=entries)
+# ### SNS ###
+# def publish_record(client, message: dict, topic_arn: str):
+#     """Send a message to an SNS topic.
 
-            if 'Successful' in response.keys():
-                # logger.info(f'Messages published: {json.dumps(response["Successful"])}')
-                logger.info(len(response["Successful"]))
-            if 'Failed' in response.keys():
-                if len(response['Failed']) > 0:
-                    logger.info(f'Messages failed: {json.dumps(response["Failed"])}')
-                    raise Exception("Failed to publish messages")
+#     Args:
+#         client (SNS.Client): Boto3 client for SNS.
+#         topic_arn (str): SNS Topic ARN.
+#         message (dict): Message dict.
+
+#     Raises:
+#         error: ClientError
+
+#     Returns:
+#         dict: The response from SNS that contains the HTTP status and the list of successful and failed messages.
+#     """
+#     try:
+#         response = client.publish(
+#             TopicArn=topic_arn,
+#             Message=json.dumps(message)
+#         )
+#         return response
+#     except ClientError as e:
+#         logger.error(e)
+#         raise e
+
+# def publish_records_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
+#     """Send a batch of messages in a single request to an SNS topic.
+#     This request may return overall success even when some messages were not published.
+#     The caller must inspect the Successful and Failed lists in the response and
+#     republish any failed messages.
+
+#     Args:
+#         client (SNS.Client): Boto3 client for SNS.
+#         topic_arn (str): SNS Topic ARN.
+#         messages (list): List of messages.
+#         message_attributes (list, optional): List of attributes for each message, used for filtering. Defaults to None.
+
+#     Raises:
+#         error: ClientError
+
+#     Returns:
+#         dict: The response from SNS that contains the HTTP status and the list of successful and failed messages.
+#     """
+
+#     if len(messages) < 10:
+#         raise Exception("Batch size must be greater than 10")
+
+#     batch = []
+#     batch_bytes = 0
+#     counter = 0
+#     max_bytes = service_size_limits_bytes["sns"]["max_record_size_bytes"]
+
+#     # SNS API accepts a max batch size of 10 max payload size of 256 kilobytes
+#     for idx, record in enumerate(messages):
+#         if get_record_size_bytes(record) > service_size_limits_bytes["sns"]["max_record_size_bytes"]:
+#             raise Exception(f'Record size must be less than {service_size_limits_bytes["sns"]["max_record_size_bytes"]} bytes')
+
+#         if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 10):
+#             batch.append(record)
+#         else:
+#             entries = [
+#                 {
+#                     'Id': str(idx),
+#                     'Message': json.dumps(message)
+#                 } for idx, message in enumerate(batch)
+#             ]
+
+#             # TODO: Add message attributes
+#             # if message_attributes is not None:
+#             #     for item, attrs in zip(entries, message_attributes):
+#             #         item["MessageAttributes"] = attrs
+
+#             # logger.info(json.dumps(entries, indent=4))
+#             logger.info(len(entries))
+#             response = client.publish_batch(
+#                 TopicArn=topic_arn,
+#                 PublishBatchRequestEntries=entries)
+
+#             if 'Successful' in response.keys():
+#                 # logger.info(f'Messages published: {json.dumps(response["Successful"])}')
+#                 logger.info(len(response["Successful"]))
+#             if 'Failed' in response.keys():
+#                 if len(response['Failed']) > 0:
+#                     logger.info(f'Messages failed: {json.dumps(response["Failed"])}')
+#                     raise Exception("Failed to publish messages")
                 
-            counter += len(batch)
-            batch = [record]
+#             counter += len(batch)
+#             batch = [record]
 
-        batch_bytes = get_record_size_bytes(batch)
+#         batch_bytes = get_record_size_bytes(batch)
 
-    # Publish remaining JSON objects
-    if len(batch) > 0:
-        entries = [
-            {
-                'Id': str(idx),
-                'Message': json.dumps(message)
-            } for idx, message in enumerate(batch)
-        ]
+#     # Publish remaining JSON objects
+#     if len(batch) > 0:
+#         entries = [
+#             {
+#                 'Id': str(idx),
+#                 'Message': json.dumps(message)
+#             } for idx, message in enumerate(batch)
+#         ]
 
-        # TODO: Add message attributes
-        # if message_attributes is not None:
-        #     for item, attrs in zip(entries, message_attributes):
-        #         item["MessageAttributes"] = attrs
+#         # TODO: Add message attributes
+#         # if message_attributes is not None:
+#         #     for item, attrs in zip(entries, message_attributes):
+#         #         item["MessageAttributes"] = attrs
 
-        response = client.publish_batch(
-            TopicArn=topic_arn,
-            PublishBatchRequestEntries=entries)
+#         response = client.publish_batch(
+#             TopicArn=topic_arn,
+#             PublishBatchRequestEntries=entries)
 
-        if 'Successful' in response.keys():
-            # logger.info(f'Messages published: {json.dumps(response["Successful"])}')
-            logger.info(len(response["Successful"]))
-        if 'Failed' in response.keys():
-            if len(response['Failed']) > 0:
-                logger.info(f'Messages failed: {json.dumps(response["Failed"])}')
-                raise Exception("Failed to publish messages")
+#         if 'Successful' in response.keys():
+#             # logger.info(f'Messages published: {json.dumps(response["Successful"])}')
+#             logger.info(len(response["Successful"]))
+#         if 'Failed' in response.keys():
+#             if len(response['Failed']) > 0:
+#                 logger.info(f'Messages failed: {json.dumps(response["Failed"])}')
+#                 raise Exception("Failed to publish messages")
             
-        counter += len(batch)
+#         counter += len(batch)
 
-        if counter != idx+1:
-            raise MissingRecords(expected=idx+1, actual=counter)
+#         if counter != idx+1:
+#             raise MissingRecords(expected=idx+1, actual=counter)
 
-### Kinesis ###
-def put_record(client, stream_name: str, data: str) -> Dict:
-    """Streams a record to AWS Kinesis Firehose.
+# ### Kinesis ###
+# def put_record(client, stream_name: str, data: str) -> Dict:
+#     """Streams a record to AWS Kinesis Firehose.
 
-    Args:
-        client (boto3.client): Kinesis Firehose client.
-        stream_name (str): Name of Firehose delivery stream.
-        data (str): Record to stream.
+#     Args:
+#         client (boto3.client): Kinesis Firehose client.
+#         stream_name (str): Name of Firehose delivery stream.
+#         data (str): Record to stream.
 
-    Returns:
-        Dict: Response from Kinesis Firehose service.
-    """
+#     Returns:
+#         Dict: Response from Kinesis Firehose service.
+#     """
 
-    # validate record size
-    if get_record_size_bytes(data) > 1000000:
-        raise Exception("Record size must be less than 1 megabyte")
+#     # validate record size
+#     if get_record_size_bytes(data) > 1000000:
+#         raise Exception("Record size must be less than 1 megabyte")
 
-    response = client.put_record(
-        DeliveryStreamName=stream_name,
-        Record={
-            'Data': "".join([json.dumps(data, ensure_ascii=False), "\n"]).encode('utf8')
-        })
+#     response = client.put_record(
+#         DeliveryStreamName=stream_name,
+#         Record={
+#             'Data': "".join([json.dumps(data, ensure_ascii=False), "\n"]).encode('utf8')
+#         })
     
-    return response
+#     return response
 
 
-def put_records_batch(client, stream_name: str, records: list) -> Dict:
-    """Streams a batch of records to AWS Kinesis Firehose.
+# def put_records_batch(client, stream_name: str, records: list) -> Dict:
+#     """Streams a batch of records to AWS Kinesis Firehose.
 
-    Args:
-        client (boto3.client): Kinesis Firehose client.
-        stream_name (str): Name of Firehose delivery stream.
-        records (list): List of records.
+#     Args:
+#         client (boto3.client): Kinesis Firehose client.
+#         stream_name (str): Name of Firehose delivery stream.
+#         records (list): List of records.
 
-    Returns:
-        Dict: Response from Kinesis Firehose service.
-    """
+#     Returns:
+#         Dict: Response from Kinesis Firehose service.
+#     """
 
-    if len(records) < 10:
-        raise Exception("Total records must be greater than 10")
+#     if len(records) < 10:
+#         raise Exception("Total records must be greater than 10")
 
-    batch = []
-    batch_bytes = 0
-    counter = 0
-    max_bytes = 4000000
+#     batch = []
+#     batch_bytes = 0
+#     counter = 0
+#     max_bytes = service_size_limits_bytes["kinesis_firehose"]["max_batch_size_bytes"]
 
-    # Kinesis API accepts a max batch size of 500 max payload size of 4 megabytes
-    for idx, record in enumerate(records):
-        if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 500):
-            batch.append(record)
-        else:
-            entries = [
-                {
-                    'Data': "".join([json.dumps(message, ensure_ascii=False), "\n"]).encode('utf8')
-                } for message in batch
-            ]
+#     # Kinesis API accepts a max batch size of 500 max payload size of 5 megabytes
+#     for idx, record in enumerate(records):
+#         if get_record_size_bytes(record) > service_size_limits_bytes["kinesis_firehose"]["max_record_size_bytes"]:
+#             raise Exception("Record size must be less than 1 megabyte")
 
-            response = client.put_record_batch(
-                DeliveryStreamName=stream_name,
-                Records=entries)
+#         if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 500):
+#             batch.append(record)
+#         else:
+#             entries = [
+#                 {
+#                     'Data': "".join([json.dumps(message, ensure_ascii=False), "\n"]).encode('utf8')
+#                 } for message in batch
+#             ]
 
-            if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-                logger.error("Failed to send message")
-                counter -= 1
-                errors += 1
+#             response = client.put_record_batch(
+#                 DeliveryStreamName=stream_name,
+#                 Records=entries)
 
-            counter += len(batch)
-            batch = [record]
+#             if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+#                 logger.error("Failed to send message")
+#                 counter -= 1
+#                 errors += 1
 
-        batch_bytes = get_record_size_bytes(batch)
+#             counter += len(batch)
+#             batch = [record]
 
-    # Publish remaining JSON objects
-    if len(batch) > 0:
-        entries = [
-            {
-                'Data': "".join([json.dumps(message, ensure_ascii=False), "\n"]).encode('utf8')
-            } for message in batch
-        ]
+#         batch_bytes = get_record_size_bytes(batch)
 
-        response = client.put_record_batch(
-            DeliveryStreamName=stream_name,
-            Records=entries)
+#     # Publish remaining JSON objects
+#     if len(batch) > 0:
+#         entries = [
+#             {
+#                 'Data': "".join([json.dumps(message, ensure_ascii=False), "\n"]).encode('utf8')
+#             } for message in batch
+#         ]
 
-        if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-            logger.error("Failed to send message")
-            counter -= len(batch)
-            errors += 1
-        counter += len(batch)
+#         response = client.put_record_batch(
+#             DeliveryStreamName=stream_name,
+#             Records=entries)
 
-        if counter != idx+1:
-            raise MissingRecords(expected=idx+1, actual=counter)
+#         if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+#             logger.error("Failed to send message")
+#             counter -= len(batch)
+#             errors += 1
+#         counter += len(batch)
+
+#         if counter != idx+1:
+#             raise MissingRecords(expected=idx+1, actual=counter)

@@ -6,10 +6,20 @@ from pathlib import Path
 from functools import cached_property
 import json
 import boto3
-from .types import JSONDataset, JSONLocalPath
-from .exceptions import InvalidJsonDataset
-from .constants import service_size_limits_kb
-from .utils import get_record_size_kb, sort_records_by_size_kb, validate_data
+from awsjsondataset.types import JSONDataset, JSONLocalPath
+from awsjsondataset.exceptions import InvalidJsonDataset, ServiceRecordSizeLimitExceeded
+from awsjsondataset.constants import service_size_limits_bytes, available_services
+from awsjsondataset.utils import (
+    sort_records_by_size_bytes, 
+    max_record_size_bytes,
+    validate_data,
+    get_available_services_by_limit,
+    validate_service
+)
+from awsjsondataset.aws.models import (
+    SqsQueue,
+)
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -63,14 +73,14 @@ class JsonDataset:
     @property
     def num_records(self) -> int:
         return len(self.data)
-
+    
     @cached_property
-    def _sort_records_by_size_kb(self):
-        return sort_records_by_size_kb(self.data)
-
+    def _sort_records_by_size_bytes(self):
+        return sort_records_by_size_bytes(self.data)
+    
     @cached_property
-    def _max_record_size_kb(self):
-        return max([ item[1] for item in self._sort_records_by_size_kb ])
+    def _max_record_size_bytes(self):
+        return max_record_size_bytes(self.data)
 
     def _read_local(self, path: JSONLocalPath) -> JSONDataset:
         with open(path, 'r') as f:
@@ -117,20 +127,32 @@ class JsonDataset:
 class AwsJsonDataset(JsonDataset):
 
     def __init__(self,
+            service: str,
+            region: str = None,
             data: JSONDataset = None,
             path: JSONLocalPath = None,
-            **kwargs
         ) -> None:
 
         super().__init__(data, path)
+        self.service = self._validate_service(service)
+        self.region: str = region or os.environ.get("AWS_REGION")
         self._data: Optional[Iterator[str]] = iter(self.data) if self.data else None
-        self.region: str = os.environ.get("AWS_REGION") or kwargs.get("region")
         self._boto3_session = boto3.Session(region_name=self.region)
+
+    def _validate_service(self, service: str) -> str:
+        return validate_service(service, self._max_record_size_bytes)
+
+    # get the account ID
+    @cached_property
+    def _account_id(self):
+        account_id = self._boto3_session.client('sts').get_caller_identity().get('Account')
+        logger.info(f"Account ID: {account_id}")
+        return account_id
 
     @cached_property
     def _available_services(self):
-        service_status = [ (k, self._max_record_size_kb < v)  for k, v in service_size_limits_kb.items() ]
-        return [ x[0] for x in list(filter(lambda x: x[1] == True, service_status)) ]
+        return get_available_services_by_limit(self.service, self._max_record_size_bytes)
+
 
     def __repr__(self) -> str:
         return f"AwsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
@@ -139,25 +161,21 @@ class AwsJsonDataset(JsonDataset):
 class SqsJsonDataset(AwsJsonDataset):
 
     def __init__(self,
+            queue_url: str,
+            service: str = "sqs",
+            region: str = None,
             data: JSONDataset = None,
             path: JSONLocalPath = None,
-            **kwargs
         ) -> None:
 
-        super().__init__(data, path, **kwargs)
+        super().__init__(service, region, data, path)
+        self.queue_url: str = queue_url
+        self._queue = SqsQueue(self._boto3_session, self.queue_url)
 
-        # Set conditional attributes
-        self._get_sqs(sqs_queue_url=kwargs.get("sqs_queue_url"))
-
-    def _get_sqs(self, sqs_queue_url):
-        if sqs_queue_url and ('sqs' in self._available_services):
-            if self._max_record_size_kb > service_size_limits_kb["sqs"]:
-                 logger.warn('Service size limit exceeded')
-            self._sqs_queue_url = sqs_queue_url
-            self._sqs = self._boto3_session.resource('sqs')
-        else:
-            self._sqs_queue_url = None
-            self._sqs = None
+    def queue_records(self):
+        """Queues records to an SQS queue.
+        """
+        self._queue.queue_records(self.data)
 
     def __repr__(self) -> str:
         return f"AwsSqsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
