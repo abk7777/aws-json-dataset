@@ -6,6 +6,7 @@ from moto import (
     mock_firehose,
     mock_sns,
     mock_sqs,
+    mock_sts
 )
 
 @pytest.fixture(scope='function')
@@ -36,3 +37,8 @@ def s3(aws_credentials):
 def firehose(aws_credentials):
     with mock_firehose():
         yield boto3.client('firehose', region_name='us-east-1')
+
+@pytest.fixture(scope='function')
+def sts(aws_credentials):
+    with mock_sts():
+        yield boto3.client('sts', region_name='us-east-1')
