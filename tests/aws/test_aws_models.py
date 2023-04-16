@@ -92,20 +92,20 @@ def test_kinesis_firehose_delivery_stream(s3, sts, firehose):
             'BucketARN': f'arn:aws:s3:::{DATA_BUCKET_NAME}'
         })
 
-    kinesis_firehose = KinesisFirehoseDeliveryStream(stream_name=DELIVERY_STREAM_NAME)
-    assert kinesis_firehose.stream_name == DELIVERY_STREAM_NAME
-    assert kinesis_firehose.region_name == "us-east-1"
-    assert kinesis_firehose.account_id == "123456789012"
-    assert kinesis_firehose.client._endpoint.host == "https://firehose.us-east-1.amazonaws.com"
+    firehose = KinesisFirehoseDeliveryStream(stream_name=DELIVERY_STREAM_NAME)
+    assert firehose.stream_name == DELIVERY_STREAM_NAME
+    assert firehose.region_name == "us-east-1"
+    assert firehose.account_id == "123456789012"
+    assert firehose.client._endpoint.host == "https://firehose.us-east-1.amazonaws.com"
 
     # put a small batch of records to the delivery stream
     with pytest.raises(Exception):
-        kinesis_firehose.data = [{"a": 1}, {"b": 1234567891011}]
-        response = kinesis_firehose.put_records()
+        firehose.data = [{"a": 1}, {"b": 1234567891011}]
+        response = firehose.put_records()
 
     # put a large batch of records to the delivery stream
-    kinesis_firehose.data = [{"a": 1}, {"b": 1234567891011}]*100
-    response = kinesis_firehose.put_records()
+    firehose.data = [{"a": 1}, {"b": 1234567891011}]*100
+    response = firehose.put_records()
     assert response is None
 
 

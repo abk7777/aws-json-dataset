@@ -11,7 +11,7 @@ service_size_limits_bytes = {
     },
     "firehose": {
         "max_batch_size": 500,
-        "max_batch_size_bytes": 1048576*5,
+        "max_batch_size_bytes": 5242880,
         "max_record_size_bytes": 1048576
     },
 }

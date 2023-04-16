@@ -1,25 +1,17 @@
-import os
-import sys
 import logging
 from typing import Iterator, Optional
 from pathlib import Path
 from functools import cached_property
 import json
-import boto3
 from awsjsondataset.types import JSONDataset, JSONLocalPath
-from awsjsondataset.exceptions import InvalidJsonDataset, ServiceRecordSizeLimitExceeded
-from awsjsondataset.constants import service_size_limits_bytes, available_services
+from awsjsondataset.exceptions import InvalidJsonDataset
 from awsjsondataset.utils import (
     sort_records_by_size_bytes, 
     max_record_size_bytes,
     validate_data,
     get_available_services_by_limit
 )
-from awsjsondataset.aws.models import (
-    SqsQueue,
-    aws_service_class_map
-)
-
+from awsjsondataset.aws.models import aws_service_class_map
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -131,7 +123,6 @@ class BaseAwsJsonDataset(JsonDataset):
         ) -> None:
 
         super().__init__(data, path)
-        self._data: Optional[Iterator[str]] = iter(self.data) if self.data else None
 
     @cached_property
     def available_services(self):

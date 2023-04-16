@@ -121,7 +121,7 @@ def test_aws_json_dataset_available_services():
 
     # kinesis within size limit
     dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
-    assert "kinesis_firehose" in dataset.available_services
+    assert "firehose" in dataset.available_services
 
     # # kinesis over size limit
     # with pytest.raises(ServiceRecordSizeLimitExceeded):
@@ -169,11 +169,13 @@ def test_aws_json_dataset_attrs():
     dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
     assert "sqs" in dataset.available_services
     assert "sns" in dataset.available_services
-    assert "kinesis_firehose" in dataset.available_services
+    assert "firehose" in dataset.available_services
 
     # assert that dataset has attributes for each service
     for item in dataset.available_services:
         assert hasattr(dataset, item)
+
+    # TODO test that service is not in available services if records is too large
 
 @mock_sqs
 def test_aws_json_dataset_sqs_send_messages(sqs):
@@ -219,8 +221,13 @@ def test_aws_json_dataset_kinesis_firehose_put_records(s3, firehose):
     # small batch size
     with pytest.raises(Exception):
         dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
-        assert dataset.kinesis_firehose(DELIVERY_STREAM_NAME).put_records() is None
+        assert dataset.firehose(DELIVERY_STREAM_NAME).put_records() is None
 
     # large batch size
     dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}]*100)
-    assert dataset.kinesis_firehose(DELIVERY_STREAM_NAME).put_records() is None
+    assert dataset.firehose(DELIVERY_STREAM_NAME).put_records() is None
+
+    # TODO test that service is not in available services if records is too large
+    # # kinesis over size limit
+    # with pytest.raises(ServiceRecordSizeLimitExceeded):
+    #     dataset = AwsJsonDataset(data=[{"a": "value"*1050000}])
