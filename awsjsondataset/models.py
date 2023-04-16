@@ -13,11 +13,11 @@ from awsjsondataset.utils import (
     sort_records_by_size_bytes, 
     max_record_size_bytes,
     validate_data,
-    get_available_services_by_limit,
-    validate_service
+    get_available_services_by_limit
 )
 from awsjsondataset.aws.models import (
     SqsQueue,
+    aws_service_class_map
 )
 
 
@@ -123,25 +123,32 @@ class JsonDataset:
         return f"JsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
 
 
-class AwsJsonDataset(JsonDataset):
+class BaseAwsJsonDataset(JsonDataset):
 
     def __init__(self,
-            service: str,
             data: JSONDataset = None,
             path: JSONLocalPath = None,
         ) -> None:
 
         super().__init__(data, path)
-        self.service = self._validate_service(service)
         self._data: Optional[Iterator[str]] = iter(self.data) if self.data else None
 
-    def _validate_service(self, service: str) -> str:
-        return validate_service(service, self._max_record_size_bytes)
-
     @cached_property
-    def _available_services(self):
-        return get_available_services_by_limit(self.service, self._max_record_size_bytes)
+    def available_services(self):
+        return get_available_services_by_limit(self._max_record_size_bytes)
 
+    def __repr__(self) -> str:
+        return f"BaseAwsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
+
+
+class AwsJsonDataset(BaseAwsJsonDataset):
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+        for item in self.available_services:
+            setattr(self, item, aws_service_class_map[item])
+            setattr(self.__getattribute__(item), 'data', self.data)
 
     def __repr__(self) -> str:
         return f"AwsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"

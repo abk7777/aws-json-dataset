@@ -16,19 +16,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 ### SQS ###
-def send_messages(client, records: JSONDataset, queue_url: str):
+def send_messages(client, messages: JSONDataset, queue_url: str):
 
-    if len(records) > 10:
-        return send_message_batch(client, records, queue_url)
+    if len(messages) > 10:
+        return send_message_batch(client, messages, queue_url)
     else:
         counter = 0
         errors = 0
 
-        for record in records:
+        for message in messages:
             counter += 1
             response = client.send_message(
                 QueueUrl=queue_url,
-                MessageBody=json.dumps(record)
+                MessageBody=json.dumps(message)
             )
 
             if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
@@ -39,9 +39,9 @@ def send_messages(client, records: JSONDataset, queue_url: str):
         logger.info(f'{counter} messages queued to {queue_url}')
 
 
-def send_message_batch(client, data: JSONDataset, queue_url: str):
+def send_message_batch(client, messages: JSONDataset, queue_url: str):
 
-    if len(data) < 10:
+    if len(messages) < 10:
         raise Exception("Batch size must be greater than 10")
 
     batch = []
@@ -50,7 +50,7 @@ def send_message_batch(client, data: JSONDataset, queue_url: str):
     max_bytes = service_size_limits_bytes["sqs"]["max_record_size_bytes"]
 
     # SQS API accepts a max batch size of 10 max payload size of 256 kilobytes
-    for idx, record in enumerate(data):
+    for idx, record in enumerate(messages):
         if get_record_size_bytes(record) > service_size_limits_bytes["sqs"]["max_record_size_bytes"]:
             raise Exception(f'Record size must be less than {service_size_limits_bytes["sqs"]["max_record_size_bytes"]} bytes')
 

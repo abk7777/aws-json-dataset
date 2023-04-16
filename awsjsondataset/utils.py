@@ -48,21 +48,21 @@ def validate_data(data: JSONDataset) -> List[Union[Dict, any]]:
     return data
 
 
-def get_available_services_by_limit(service, max_record_size_bytes):
+def get_available_services_by_limit(max_record_size_bytes):
     service_size_record_limits_bytes = { k: v["max_record_size_bytes"] for k, v in service_size_limits_bytes.items() }
     service_status = [ (k, max_record_size_bytes < v)  for k, v in service_size_record_limits_bytes.items() ]
     return [ x[0] for x in list(filter(lambda x: x[1] == True, service_status)) ]
 
 
-def validate_service(service: str, max_record_size_bytes: float) -> str:
-    if service not in available_services:
-        raise ValueError(f"Invalid service: {service}")
-    else:
-        available_services_by_limit = get_available_services_by_limit(service, max_record_size_bytes)
-        if service not in available_services_by_limit:
-            raise ServiceRecordSizeLimitExceeded(service, max_record_size_bytes)
-        else:
-            return service
+# def validate_service(service: str, max_record_size_bytes: float) -> str:
+#     if service not in available_services:
+#         raise ValueError(f"Invalid service: {service}")
+#     else:
+#         available_services_by_limit = get_available_services_by_limit(service, max_record_size_bytes)
+#         if service not in available_services_by_limit:
+#             raise ServiceRecordSizeLimitExceeded(service, max_record_size_bytes)
+#         else:
+#             return service
 
 
 # ### SQS ###

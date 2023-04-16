@@ -10,7 +10,6 @@ from awsjsondataset.aws.utils import (
     put_records_batch
 )
 
-
 # set up logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -25,9 +24,9 @@ class AwsServiceBase:
     Attributes:
         boto3_session (boto3.session.Session): The boto3 session.
     """
-    def __init__(self, region_name: str = None) -> None:
-        self.region_name = os.environ.get("AWS_REGION") or region_name
-        self.boto3_session = boto3.Session(region_name=self.region_name)
+    def __init__(self) -> None:
+        self.boto3_session = boto3.Session()
+        self.region_name = self.boto3_session.region_name
 
     # get the account ID
     @cached_property
@@ -53,7 +52,7 @@ class SqsQueue(AwsServiceBase):
         self.queue_url = queue_url if queue_url.startswith("http") else f"https://sqs.{self.region_name}.amazonaws.com/{self.account_id}/{queue_url}"
         self.client = self.boto3_session.client('sqs')
 
-    def send_messages(self, records: list) -> dict:
+    def send_messages(self) -> dict:
         """Queues records to the SQS queue.
 
         Args:
@@ -61,8 +60,8 @@ class SqsQueue(AwsServiceBase):
 
         Returns:
             dict: The response from the SQS queue.
-        """
-        return send_messages(client=self.client, records=records, queue_url=self.queue_url)
+        """           
+        return send_messages(client=self.client, messages=self.data, queue_url=self.queue_url)
 
 
 class SnsTopic(AwsServiceBase):
@@ -82,7 +81,7 @@ class SnsTopic(AwsServiceBase):
         self.topic_arn = topic_arn
         self.client = self.boto3_session.client('sns')
 
-    def publish_messages(self, messages: list) -> dict:
+    def publish_messages(self) -> dict:
         """Publishes a batch of messages to the SNS topic.
 
         Args:
@@ -91,7 +90,7 @@ class SnsTopic(AwsServiceBase):
         Returns:
             dict: The response from the SNS topic.
         """
-        return publish_messages_batch(client=self.client, messages=messages, topic_arn=self.topic_arn)
+        return publish_messages_batch(client=self.client, messages=self.data, topic_arn=self.topic_arn)
 
 
 class KinesisFirehoseDeliveryStream(AwsServiceBase):
@@ -111,7 +110,7 @@ class KinesisFirehoseDeliveryStream(AwsServiceBase):
         self.stream_name = stream_name
         self.client = self.boto3_session.client('firehose')
 
-    def put_records(self, records: list) -> dict:
+    def put_records(self) -> dict:
         """Puts a batch of records to the Kinesis Firehose delivery stream.
 
         Args:
@@ -120,4 +119,11 @@ class KinesisFirehoseDeliveryStream(AwsServiceBase):
         Returns:
             dict: The response from the Kinesis Firehose delivery stream.
         """
-        return put_records_batch(client=self.client, records=records, stream_name=self.stream_name)
+        return put_records_batch(client=self.client, records=self.data, stream_name=self.stream_name)
+    
+# create service lookup map
+aws_service_class_map = {
+    "sqs": SqsQueue,
+    "sns": SnsTopic,
+    "kinesis_firehose": KinesisFirehoseDeliveryStream
+}
