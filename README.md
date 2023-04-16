@@ -46,6 +46,19 @@ Stream, publish and store JSON data to various AWS services including:
 - [ ] Add DynamoDB support
 - [ ] Add S3 support
 
+### Ideas
+- Methods
+    - set primary key (id), sort key
+    - add two instances together (union with no duplicates), or push()/pop() individual records
+    - subtract/find intersectio of two instances
+    - unmarshal ==> return generator of dataclass instance made from each record
+    - contains method that returns id
+    - filter method that filters by key
+    - map method to add new fields
+    - `in` method by id
+- Use a dataclass to store state for the JSON dataset
+- optimization using slots? `__slots__`
+
 ## Quickstart
 
 ## Installation

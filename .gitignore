@@ -107,11 +107,8 @@ ENV/
 .vscode/
 .idea/
 
-# Project Files
-
 ## Python Packaging assets
 docs/
-tests/
 .editorconfig
 .travis.yml
 *.rst
@@ -121,4 +118,7 @@ tox.ini
 requirements_dev.txt
 .github/
 setup.*
+
+# Project Files
 ___*
+data/

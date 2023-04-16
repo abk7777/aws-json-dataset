@@ -1,0 +1,1 @@
+# Python classes to wrap AWS services (SQS, SNS, Kinesis, S3, etc.)
