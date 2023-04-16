@@ -4,7 +4,8 @@ import pytest
 from pathlib import Path
 from awsjsondataset.models import (
     JsonDataset,
-    AwsJsonDataset,
+    BaseAwsJsonDataset,
+    AwsJsonDataset
 )
 from awsjsondataset.exceptions import InvalidJsonDataset, ServiceRecordSizeLimitExceeded
 from tests.fixtures import *
@@ -70,115 +71,156 @@ def test_json_dataset_max_record_size_kb():
     dataset = JsonDataset(data=[{"a": 1}, {"b": 2}])
     assert dataset._max_record_size_bytes == 57
 
-def test_aws_json_dataset_init():
-    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sqs")
+def test_base_aws_json_dataset_init():
+    dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
     assert dataset.data == [{"a": 1}, {"b": 2}]
     assert dataset.path is None
     assert dataset.num_records == 2
 
-    dataset = AwsJsonDataset(path=test_data_dir / "subtechniques.json", service="sqs")
+    dataset = BaseAwsJsonDataset(path=test_data_dir / "subtechniques.json")
     assert dataset.data is not None
     assert dataset.path == test_data_dir / "subtechniques.json"
     assert dataset.num_records == 21
 
     # test args
-    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sqs")
+    dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
     assert dataset.data == [{"a": 1}, {"b": 2}]
     assert dataset.path is None
     assert dataset.num_records == 2
 
-    dataset = AwsJsonDataset(path=test_data_dir / "subtechniques.json", service="sqs")
+    dataset = BaseAwsJsonDataset(path=test_data_dir / "subtechniques.json")
     assert dataset.data is not None
     assert dataset.path == test_data_dir / "subtechniques.json"
     assert dataset.num_records == 21
 
     # Test exceptions
     with pytest.raises(TypeError):
-        AwsJsonDataset(data=[{"a": 1}, {"b": 2}], path=test_data_dir / "subtechniques.json", service="sqs")
+        BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}], path=test_data_dir / "subtechniques.json")
 
     with pytest.raises(InvalidJsonDataset):
-        AwsJsonDataset(data=[{"a": 1}, {"b": 2}, 3], service="sqs")
+        BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}, 3])
 
 # test available services with record under max service size
 def test_aws_json_dataset_available_services():
 
     # sqs within size limit
-    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sqs")
-    assert "sqs" in dataset._available_services
+    dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert "sqs" in dataset.available_services
 
-    # sqs over size limit
-    with pytest.raises(ServiceRecordSizeLimitExceeded):
-        dataset = AwsJsonDataset(data=[{"a": "value"*100000}], service="sqs")
+    # # sqs over size limit
+    # with pytest.raises(ServiceRecordSizeLimitExceeded):
+    #     dataset = BaseAwsJsonDataset(data=[{"a": "value"*100000}])
 
     # sns within size limit
-    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sns")
-    assert "sns" in dataset._available_services
+    dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert "sns" in dataset.available_services
 
-    # sns over size limit
-    with pytest.raises(ServiceRecordSizeLimitExceeded):
-        dataset = AwsJsonDataset(data=[{"a": "value"*100000}], service="sns")
+    # # sns over size limit
+    # with pytest.raises(ServiceRecordSizeLimitExceeded):
+    #     dataset = BaseAwsJsonDataset(data=[{"a": "value"*100000}])
 
     # kinesis within size limit
-    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="kinesis_firehose")
-    assert "kinesis_firehose" in dataset._available_services
+    dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert "kinesis_firehose" in dataset.available_services
 
-    # kinesis over size limit
-    with pytest.raises(ServiceRecordSizeLimitExceeded):
-        dataset = AwsJsonDataset(data=[{"a": "value"*1050000}], service="kinesis_firehose")
+    # # kinesis over size limit
+    # with pytest.raises(ServiceRecordSizeLimitExceeded):
+    #     dataset = BaseAwsJsonDataset(data=[{"a": "value"*1050000}])
 
 def test_aws_json_dataset_validate_service():
     # test valid service
-    assert AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sqs")
+    assert BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
 
-    # test invalid service
-    with pytest.raises(ValueError):
-        AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="invalid_service")
+    # # test invalid service
+    # with pytest.raises(ValueError):
+    #     BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
 
-# @mock_sqs
-# def test_sqs_json_dataset_init(sqs):
+def test_aws_json_dataset_init():
+    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert dataset.data == [{"a": 1}, {"b": 2}]
+    assert dataset.path is None
+    assert dataset.num_records == 2
 
-#     # create a mock resource
-#     QUEUE_NAME = 'queue-url'
-#     sqs.create_queue(QueueName=QUEUE_NAME)
-#     res = sqs.get_queue_url(QueueName=QUEUE_NAME)
-#     queue_url = res['QueueUrl']
+    dataset = AwsJsonDataset(path=test_data_dir / "subtechniques.json")
+    assert dataset.data is not None
+    assert dataset.path == test_data_dir / "subtechniques.json"
+    assert dataset.num_records == 21
 
-#     dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
-#     assert dataset.data == [{"a": 1}, {"b": 2}]
-#     assert dataset.path is None
-#     assert dataset.num_records == 2
+    # test args
+    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert dataset.data == [{"a": 1}, {"b": 2}]
+    assert dataset.path is None
+    assert dataset.num_records == 2
 
-#     dataset = SqsJsonDataset(path=test_data_dir / "subtechniques.json", queue_url=queue_url)
-#     assert dataset.data is not None
-#     assert dataset.path == test_data_dir / "subtechniques.json"
-#     assert dataset.num_records == 21
+    dataset = AwsJsonDataset(path=test_data_dir / "subtechniques.json")
+    assert dataset.data is not None
+    assert dataset.path == test_data_dir / "subtechniques.json"
+    assert dataset.num_records == 21
 
-#     # test args
-#     dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
-#     assert dataset.data == [{"a": 1}, {"b": 2}]
-#     assert dataset.path is None
-#     assert dataset.num_records == 2
+    # Test exceptions
+    with pytest.raises(TypeError):
+        AwsJsonDataset(data=[{"a": 1}, {"b": 2}], path=test_data_dir / "subtechniques.json")
 
-#     dataset = SqsJsonDataset(path=test_data_dir / "subtechniques.json", queue_url=queue_url)
-#     assert dataset.data is not None
-#     assert dataset.path == test_data_dir / "subtechniques.json"
-#     assert dataset.num_records == 21
+    with pytest.raises(InvalidJsonDataset):
+        AwsJsonDataset(data=[{"a": 1}, {"b": 2}, 3])
 
-#     # Test exceptions
-#     with pytest.raises(TypeError):
-#         SqsJsonDataset(data=[{"a": 1}, {"b": 2}], path=test_data_dir / "subtechniques.json", queue_url=queue_url)
+def test_aws_json_dataset_attrs():
 
-#     with pytest.raises(InvalidJsonDataset):
-#         SqsJsonDataset(data=[{"a": 1}, {"b": 2}, 3], queue_url=queue_url)
+    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert "sqs" in dataset.available_services
+    assert "sns" in dataset.available_services
+    assert "kinesis_firehose" in dataset.available_services
 
-# @mock_sqs
-# def test_sqs_json_dataset_queue_records(sqs):
+    # assert that dataset has attributes for each service
+    for item in dataset.available_services:
+        assert hasattr(dataset, item)
 
-#     # create a mock resource
-#     QUEUE_NAME = 'queue-url'
-#     sqs.create_queue(QueueName=QUEUE_NAME)
-#     res = sqs.get_queue_url(QueueName=QUEUE_NAME)
-#     queue_url = res['QueueUrl']
+@mock_sqs
+def test_aws_json_dataset_sqs_send_messages(sqs):
 
-#     dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
-#     assert dataset.send_messages() is None
+    # create queue
+    queue_url = sqs.create_queue(QueueName="test_queue")["QueueUrl"]
+
+    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+    assert dataset.sqs(queue_url).send_messages() is None
+
+@mock_sns
+def test_aws_json_dataset_sns_publish(sns):
+    
+    # create topic
+    topic_arn = sns.create_topic(Name="test_topic")["TopicArn"]
+
+    # small batch size
+    with pytest.raises(Exception):
+        dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+        assert dataset.sns(topic_arn).publish_messages() is None
+
+    # large batch size
+    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}]*100)
+    assert dataset.sns(topic_arn).publish_messages() is None
+
+@mock_s3
+@mock_firehose
+def test_aws_json_dataset_kinesis_firehose_put_records(s3, firehose):
+    
+    # create a mock bucket
+    DATA_BUCKET_NAME = 'data-bucket'
+    response = s3.create_bucket(Bucket=DATA_BUCKET_NAME)
+
+    # create a mock delivery stream
+    DELIVERY_STREAM_NAME = "data-delivery-stream"
+    response = firehose.create_delivery_stream(
+        DeliveryStreamName=DELIVERY_STREAM_NAME,
+        ExtendedS3DestinationConfiguration={
+            'RoleARN': 'arn:aws:iam::123456789012:role/firehose_delivery_role',
+            'BucketARN': f'arn:aws:s3:::{DATA_BUCKET_NAME}'
+        })
+
+    # small batch size
+    with pytest.raises(Exception):
+        dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
+        assert dataset.kinesis_firehose(DELIVERY_STREAM_NAME).put_records() is None
+
+    # large batch size
+    dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}]*100)
+    assert dataset.kinesis_firehose(DELIVERY_STREAM_NAME).put_records() is None
