@@ -66,10 +66,10 @@ def validate_service(service: str, max_record_size_bytes: float) -> str:
 
 
 # ### SQS ###
-# def queue_records(client, data: JSONDataset, sqs_queue_url: str):
+# def send_messages(client, data: JSONDataset, sqs_queue_url: str):
 
 #     if len(data) > 10:
-#         return queue_records_batch(client, data, sqs_queue_url)
+#         return send_message_batch(client, data, sqs_queue_url)
 #     else:
 #         counter = 0
 #         errors = 0
@@ -89,7 +89,7 @@ def validate_service(service: str, max_record_size_bytes: float) -> str:
 #         logger.info(f'{counter} messages queued to {sqs_queue_url}')
 
 
-# def queue_records_batch(client, data: JSONDataset, sqs_queue_url: str):
+# def send_message_batch(client, data: JSONDataset, sqs_queue_url: str):
 
 #     if len(data) < 10:
 #         raise Exception("Batch size must be greater than 10")
@@ -166,7 +166,7 @@ def validate_service(service: str, max_record_size_bytes: float) -> str:
 #         logger.error(e)
 #         raise e
 
-# def publish_records_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
+# def publish_messages_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
 #     """Send a batch of messages in a single request to an SNS topic.
 #     This request may return overall success even when some messages were not published.
 #     The caller must inspect the Successful and Failed lists in the response and

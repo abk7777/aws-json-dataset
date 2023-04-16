@@ -1,10 +1,12 @@
 # Python models to wrap AWS services including S3, SNS, SQS, and Firehose
 # Methods are available in awsjsondataset.aws.utils
+import os
 import logging
+from functools import cached_property
 import boto3
 from awsjsondataset.aws.utils import (
-    queue_records,
-    publish_records_batch,
+    send_messages,
+    publish_messages_batch,
     put_records_batch
 )
 
@@ -23,28 +25,35 @@ class AwsServiceBase:
     Attributes:
         boto3_session (boto3.session.Session): The boto3 session.
     """
-    def __init__(self, boto3_session) -> None:
-        self.boto3_session = boto3_session
+    def __init__(self, region_name: str = None) -> None:
+        self.region_name = os.environ.get("AWS_REGION") or region_name
+        self.boto3_session = boto3.Session(region_name=self.region_name)
 
+    # get the account ID
+    @cached_property
+    def account_id(self):
+        account_id = self.boto3_session.client('sts').get_caller_identity().get('Account')
+        logger.info(f"Account ID: {account_id}")
+        return account_id
+    
 
 class SqsQueue(AwsServiceBase):
     """A class to wrap an SQS queue.
 
     Args:
         queue_url (str): The URL of the SQS queue.
-        region_name (str): The AWS region name.
 
     Attributes:
         queue_url (str): The URL of the SQS queue.
-        region_name (str): The AWS region name.
         client (boto3.client): The boto3 client for the SQS queue.
     """
-    def __init__(self, boto3_session, queue_url: str) -> None:
-        super().__init__(boto3_session)
-        self.queue_url = queue_url
+
+    def __init__(self, queue_url: str, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.queue_url = queue_url if queue_url.startswith("http") else f"https://sqs.{self.region_name}.amazonaws.com/{self.account_id}/{queue_url}"
         self.client = self.boto3_session.client('sqs')
 
-    def queue_records(self, records: list) -> dict:
+    def send_messages(self, records: list) -> dict:
         """Queues records to the SQS queue.
 
         Args:
@@ -53,7 +62,7 @@ class SqsQueue(AwsServiceBase):
         Returns:
             dict: The response from the SQS queue.
         """
-        return queue_records(client=self.client, records=records, queue_url=self.queue_url)
+        return send_messages(client=self.client, records=records, queue_url=self.queue_url)
 
 
 class SnsTopic(AwsServiceBase):
@@ -68,12 +77,12 @@ class SnsTopic(AwsServiceBase):
         region_name (str): The AWS region name.
         client (boto3.client): The boto3 client for the SNS topic.
     """
-    def __init__(self, boto3_session, topic_arn: str, region_name: str) -> None:
-        super().__init__(boto3_session, region_name)
+    def __init__(self, topic_arn: str, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.topic_arn = topic_arn
-        self.client = self.boto3_session.client('sns', region_name=self.region_name)
+        self.client = self.boto3_session.client('sns')
 
-    def publish_records(self, messages: list) -> dict:
+    def publish_messages(self, messages: list) -> dict:
         """Publishes a batch of messages to the SNS topic.
 
         Args:
@@ -82,7 +91,7 @@ class SnsTopic(AwsServiceBase):
         Returns:
             dict: The response from the SNS topic.
         """
-        return publish_records_batch(client=self.client, messages=messages, topic_arn=self.topic_arn)
+        return publish_messages_batch(client=self.client, messages=messages, topic_arn=self.topic_arn)
 
 
 class KinesisFirehoseDeliveryStream(AwsServiceBase):
@@ -97,12 +106,12 @@ class KinesisFirehoseDeliveryStream(AwsServiceBase):
         region_name (str): The AWS region name.
         client (boto3.client): The boto3 client for the Kinesis Firehose delivery stream.
     """
-    def __init__(self, boto3_session, stream_name: str, region_name: str) -> None:
-        super().__init__(boto3_session, region_name)
+    def __init__(self, stream_name: str, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.stream_name = stream_name
-        self.client = self.boto3_session.client('firehose', region_name=self.region_name)
+        self.client = self.boto3_session.client('firehose')
 
-    def put_records_batch(self, records: list) -> dict:
+    def put_records(self, records: list) -> dict:
         """Puts a batch of records to the Kinesis Firehose delivery stream.
 
         Args:

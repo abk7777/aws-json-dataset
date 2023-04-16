@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 ### SQS ###
-def queue_records(client, records: JSONDataset, queue_url: str):
+def send_messages(client, records: JSONDataset, queue_url: str):
 
     if len(records) > 10:
-        return queue_records_batch(client, records, queue_url)
+        return send_message_batch(client, records, queue_url)
     else:
         counter = 0
         errors = 0
@@ -39,7 +39,7 @@ def queue_records(client, records: JSONDataset, queue_url: str):
         logger.info(f'{counter} messages queued to {queue_url}')
 
 
-def queue_records_batch(client, data: JSONDataset, queue_url: str):
+def send_message_batch(client, data: JSONDataset, queue_url: str):
 
     if len(data) < 10:
         raise Exception("Batch size must be greater than 10")
@@ -116,7 +116,7 @@ def publish_record(client, message: dict, topic_arn: str):
         logger.error(e)
         raise e
 
-def publish_records_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
+def publish_messages_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
     """Send a batch of messages in a single request to an SNS topic.
     This request may return overall success even when some messages were not published.
     The caller must inspect the Successful and Failed lists in the response and
