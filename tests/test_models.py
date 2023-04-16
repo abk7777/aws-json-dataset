@@ -5,8 +5,7 @@ from pathlib import Path
 from awsjsondataset.models import (
     JsonDataset,
     AwsJsonDataset,
-    SqsJsonDataset,
-    )
+)
 from awsjsondataset.exceptions import InvalidJsonDataset, ServiceRecordSizeLimitExceeded
 from tests.fixtures import *
 
@@ -127,11 +126,6 @@ def test_aws_json_dataset_available_services():
     with pytest.raises(ServiceRecordSizeLimitExceeded):
         dataset = AwsJsonDataset(data=[{"a": "value"*1050000}], service="kinesis_firehose")
 
-@mock_sts
-def test_aws_json_dataset_account_id(sts):
-    account_id = sts.get_caller_identity()["Account"]
-    assert AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sqs")._account_id == account_id
-
 def test_aws_json_dataset_validate_service():
     # test valid service
     assert AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="sqs")
@@ -140,51 +134,51 @@ def test_aws_json_dataset_validate_service():
     with pytest.raises(ValueError):
         AwsJsonDataset(data=[{"a": 1}, {"b": 2}], service="invalid_service")
 
-@mock_sqs
-def test_sqs_json_dataset_init(sqs):
+# @mock_sqs
+# def test_sqs_json_dataset_init(sqs):
 
-    # create a mock resource
-    QUEUE_NAME = 'queue-url'
-    sqs.create_queue(QueueName=QUEUE_NAME)
-    res = sqs.get_queue_url(QueueName=QUEUE_NAME)
-    queue_url = res['QueueUrl']
+#     # create a mock resource
+#     QUEUE_NAME = 'queue-url'
+#     sqs.create_queue(QueueName=QUEUE_NAME)
+#     res = sqs.get_queue_url(QueueName=QUEUE_NAME)
+#     queue_url = res['QueueUrl']
 
-    dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
-    assert dataset.data == [{"a": 1}, {"b": 2}]
-    assert dataset.path is None
-    assert dataset.num_records == 2
+#     dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
+#     assert dataset.data == [{"a": 1}, {"b": 2}]
+#     assert dataset.path is None
+#     assert dataset.num_records == 2
 
-    dataset = SqsJsonDataset(path=test_data_dir / "subtechniques.json", queue_url=queue_url)
-    assert dataset.data is not None
-    assert dataset.path == test_data_dir / "subtechniques.json"
-    assert dataset.num_records == 21
+#     dataset = SqsJsonDataset(path=test_data_dir / "subtechniques.json", queue_url=queue_url)
+#     assert dataset.data is not None
+#     assert dataset.path == test_data_dir / "subtechniques.json"
+#     assert dataset.num_records == 21
 
-    # test args
-    dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
-    assert dataset.data == [{"a": 1}, {"b": 2}]
-    assert dataset.path is None
-    assert dataset.num_records == 2
+#     # test args
+#     dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
+#     assert dataset.data == [{"a": 1}, {"b": 2}]
+#     assert dataset.path is None
+#     assert dataset.num_records == 2
 
-    dataset = SqsJsonDataset(path=test_data_dir / "subtechniques.json", queue_url=queue_url)
-    assert dataset.data is not None
-    assert dataset.path == test_data_dir / "subtechniques.json"
-    assert dataset.num_records == 21
+#     dataset = SqsJsonDataset(path=test_data_dir / "subtechniques.json", queue_url=queue_url)
+#     assert dataset.data is not None
+#     assert dataset.path == test_data_dir / "subtechniques.json"
+#     assert dataset.num_records == 21
 
-    # Test exceptions
-    with pytest.raises(TypeError):
-        SqsJsonDataset(data=[{"a": 1}, {"b": 2}], path=test_data_dir / "subtechniques.json", queue_url=queue_url)
+#     # Test exceptions
+#     with pytest.raises(TypeError):
+#         SqsJsonDataset(data=[{"a": 1}, {"b": 2}], path=test_data_dir / "subtechniques.json", queue_url=queue_url)
 
-    with pytest.raises(InvalidJsonDataset):
-        SqsJsonDataset(data=[{"a": 1}, {"b": 2}, 3], queue_url=queue_url)
+#     with pytest.raises(InvalidJsonDataset):
+#         SqsJsonDataset(data=[{"a": 1}, {"b": 2}, 3], queue_url=queue_url)
 
-@mock_sqs
-def test_sqs_json_dataset_queue_records(sqs):
+# @mock_sqs
+# def test_sqs_json_dataset_queue_records(sqs):
 
-    # create a mock resource
-    QUEUE_NAME = 'queue-url'
-    sqs.create_queue(QueueName=QUEUE_NAME)
-    res = sqs.get_queue_url(QueueName=QUEUE_NAME)
-    queue_url = res['QueueUrl']
+#     # create a mock resource
+#     QUEUE_NAME = 'queue-url'
+#     sqs.create_queue(QueueName=QUEUE_NAME)
+#     res = sqs.get_queue_url(QueueName=QUEUE_NAME)
+#     queue_url = res['QueueUrl']
 
-    dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
-    assert dataset.queue_records() is None
+#     dataset = SqsJsonDataset(data=[{"a": 1}, {"b": 2}], queue_url=queue_url)
+#     assert dataset.send_messages() is None

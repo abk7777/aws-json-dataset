@@ -2,10 +2,10 @@ import sys
 sys.path.append("../awsjsondataset")
 import pytest
 from awsjsondataset.aws.utils import (
-    queue_records,
-    queue_records_batch,
+    send_messages,
+    send_message_batch,
     publish_record,
-    publish_records_batch,
+    publish_messages_batch,
     put_record,
     put_records_batch
 )
@@ -20,7 +20,7 @@ def test_queue_records(sqs):
     sqs.create_queue(QueueName=QUEUE_NAME)
 
     data = [{"a": 1}, {"b": 2}]
-    assert queue_records(sqs, data, QUEUE_NAME) == None
+    assert send_messages(sqs, data, QUEUE_NAME) == None
 
 @mock_sqs
 def test_queue_records_batch(sqs):
@@ -31,21 +31,21 @@ def test_queue_records_batch(sqs):
 
     # test for 3 batches
     data = [ {idx:idx+1} for idx in range(30) ]
-    assert queue_records_batch(sqs, data, QUEUE_NAME) == None
+    assert send_message_batch(sqs, data, QUEUE_NAME) == None
 
     # test for total in batch over 256kb
     data = [ {"field": "value"*10000} for idx in range(30) ]
-    assert queue_records_batch(sqs, data, QUEUE_NAME) == None
+    assert send_message_batch(sqs, data, QUEUE_NAME) == None
 
     # test for records over 256kb
     data = [ {"field": "value"*100000} for idx in range(30) ]
     with pytest.raises(Exception):
-        queue_records_batch(sqs, data, QUEUE_NAME)
+        send_message_batch(sqs, data, QUEUE_NAME)
 
     # test for 1 batch less than 10 records
     data = [ {idx:idx+1} for idx in range(5) ]
     with pytest.raises(Exception):
-        queue_records_batch(sqs, data, QUEUE_NAME)
+        send_message_batch(sqs, data, QUEUE_NAME)
 
 ### SNS ###
 @mock_sns
@@ -69,23 +69,23 @@ def test_publish_records_batch(sns):
 
     # test for 3 batches
     data = [ {idx:idx+1} for idx in range(30) ]
-    response = publish_records_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
+    response = publish_messages_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
     assert response is None
 
     # test for total in batch over 256kb
     data = [ {"field": "value"*10000} for idx in range(30) ]
-    response = publish_records_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
+    response = publish_messages_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
     assert response is None
 
     # test for error with records over 256kb
     data = [ {"field": "value"*100000} for idx in range(30) ]
     with pytest.raises(Exception):
-        publish_records_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
+        publish_messages_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
 
     # test for error with 1 batch less than 10 records
     data = [ {idx:idx+1} for idx in range(5) ]
     with pytest.raises(Exception):
-        publish_records_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
+        publish_messages_batch(client=sns, messages=data, topic_arn=TOPIC_ARN)
         
 ### Kinesis ###
 @mock_firehose

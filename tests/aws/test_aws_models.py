@@ -1,0 +1,109 @@
+import sys
+sys.path.append("../awsjsondataset")
+import pytest
+from pathlib import Path
+from awsjsondataset.aws.models import (
+    AwsServiceBase,
+    SqsQueue,
+    SnsTopic,
+    KinesisFirehoseDeliveryStream
+)
+from tests.fixtures import *
+
+@mock_sts
+def test_aws_service_base_attrs(sts):
+    service = AwsServiceBase(region_name="us-east-1")
+    assert service.account_id == "123456789012"
+    assert service.region_name == "us-east-1"
+
+@mock_sts
+@mock_sqs
+def test_sqs_queue_attrs(sts, sqs):
+    queue_url = sqs.create_queue(QueueName="test_queue")["QueueUrl"]
+    sqs = SqsQueue(queue_url=queue_url, region_name="us-east-1")
+    assert sqs.queue_url == queue_url
+    assert sqs.region_name == "us-east-1"
+    assert sqs.account_id == "123456789012"
+    assert sqs.client._endpoint.host == "https://sqs.us-east-1.amazonaws.com"
+
+@mock_sts
+@mock_sqs
+def test_sqs_queue_send_messages(sts, sqs):
+
+    queue_url = sqs.create_queue(QueueName="test_queue")["QueueUrl"]
+    _sqs = SqsQueue(queue_url=queue_url, region_name="us-east-1")
+
+    # queue small batch of records to the queue
+    records = [{"a": 1}, {"b": 2}]
+    response = _sqs.send_messages(records=records)
+    assert response is None
+
+    # queue records to the queue
+    records = [{"a": 1}, {"b": 2}]*100
+    response = _sqs.send_messages(records=records)
+    assert response is None
+
+@mock_sts
+@mock_sns
+def test_sns_topic_attrs(sts, sns):
+
+    topic_arn = sns.create_topic(Name="test_topic")["TopicArn"]
+    _sns = SnsTopic(topic_arn=topic_arn, region_name="us-east-1")
+    assert _sns.topic_arn == topic_arn
+    assert _sns.region_name == "us-east-1"
+    assert _sns.account_id == "123456789012"
+    assert _sns.client._endpoint.host == "https://sns.us-east-1.amazonaws.com"
+
+@mock_sts
+@mock_sns
+def test_sns_topic_publish_messages(sts, sns):
+
+    topic_arn = sns.create_topic(Name="test_topic")["TopicArn"]
+    _sns = SnsTopic(topic_arn=topic_arn, region_name="us-east-1")
+
+    # publish small batch of messages to the topic
+    with pytest.raises(Exception):
+        records = [{"a": 1}, {"b": 2}]
+        response = _sns.publish_messages(messages=records)
+        assert response is None
+
+    # publish records to the topic
+    records = [{"a": 1}, {"b": 2}]*100
+    response = _sns.publish_messages(messages=records)
+    assert response is None
+
+@mock_s3
+@mock_sts
+@mock_firehose
+def test_kinesis_firehose_delivery_stream(s3, sts, firehose):
+
+    # create a mock bucket
+    DATA_BUCKET_NAME = 'data-bucket'
+    response = s3.create_bucket(Bucket=DATA_BUCKET_NAME)
+
+    # create a mock delivery stream
+    DELIVERY_STREAM_NAME = "data-delivery-stream"
+    response = firehose.create_delivery_stream(
+        DeliveryStreamName=DELIVERY_STREAM_NAME,
+        ExtendedS3DestinationConfiguration={
+            'RoleARN': 'arn:aws:iam::123456789012:role/firehose_delivery_role',
+            'BucketARN': f'arn:aws:s3:::{DATA_BUCKET_NAME}'
+        })
+
+    kinesis_firehose = KinesisFirehoseDeliveryStream(stream_name=DELIVERY_STREAM_NAME, region_name="us-east-1")
+    assert kinesis_firehose.stream_name == DELIVERY_STREAM_NAME
+    assert kinesis_firehose.region_name == "us-east-1"
+    assert kinesis_firehose.account_id == "123456789012"
+    assert kinesis_firehose.client._endpoint.host == "https://firehose.us-east-1.amazonaws.com"
+
+    # put a small batch of records to the delivery stream
+    with pytest.raises(Exception):
+        records = [{"a": 1}, {"b": 1234567891011}]
+        response = kinesis_firehose.put_records(records=records)
+
+    # put a large batch of records to the delivery stream
+    records = [{"a": 1}, {"b": 1234567891011}]*100
+    response = kinesis_firehose.put_records(records=records)
+    assert response is None
+
+
