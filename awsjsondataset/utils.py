@@ -307,11 +307,11 @@ def get_available_services_by_limit(max_record_size_bytes):
 #     batch = []
 #     batch_bytes = 0
 #     counter = 0
-#     max_bytes = service_size_limits_bytes["kinesis_firehose"]["max_batch_size_bytes"]
+#     max_bytes = service_size_limits_bytes["firehose"]["max_batch_size_bytes"]
 
 #     # Kinesis API accepts a max batch size of 500 max payload size of 5 megabytes
 #     for idx, record in enumerate(records):
-#         if get_record_size_bytes(record) > service_size_limits_bytes["kinesis_firehose"]["max_record_size_bytes"]:
+#         if get_record_size_bytes(record) > service_size_limits_bytes["firehose"]["max_record_size_bytes"]:
 #             raise Exception("Record size must be less than 1 megabyte")
 
 #         if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 500):

@@ -125,5 +125,5 @@ class KinesisFirehoseDeliveryStream(AwsServiceBase):
 aws_service_class_map = {
     "sqs": SqsQueue,
     "sns": SnsTopic,
-    "kinesis_firehose": KinesisFirehoseDeliveryStream
+    "firehose": KinesisFirehoseDeliveryStream
 }
