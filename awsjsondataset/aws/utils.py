@@ -307,3 +307,4 @@ def put_records_batch(client, stream_name: str, records: list) -> Dict:
 
         if counter != idx+1:
             raise MissingRecords(expected=idx+1, actual=counter)
+        

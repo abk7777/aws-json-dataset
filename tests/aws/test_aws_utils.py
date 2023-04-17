@@ -13,7 +13,7 @@ from tests.fixtures import *
 
 ### SQS ###
 @mock_sqs
-def test_queue_records(sqs):
+def test_send_messages(sqs):
 
     # create a mock resource
     QUEUE_NAME = 'queue-url'
@@ -23,7 +23,7 @@ def test_queue_records(sqs):
     assert send_messages(sqs, data, QUEUE_NAME) == None
 
 @mock_sqs
-def test_queue_records_batch(sqs):
+def test_send_message_batch(sqs):
     
     # create a mock resource
     QUEUE_NAME = 'queue-url'
@@ -46,6 +46,10 @@ def test_queue_records_batch(sqs):
     data = [ {idx:idx+1} for idx in range(5) ]
     with pytest.raises(Exception):
         send_message_batch(sqs, data, QUEUE_NAME)
+
+    data = [ {idx:idx+1} for idx in range(100) ]
+    with pytest.raises(Exception):
+        send_message_batch(sqs, data, "wrong-queue")
 
 ### SNS ###
 @mock_sns

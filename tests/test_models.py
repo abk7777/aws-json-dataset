@@ -1,8 +1,10 @@
 import sys
 sys.path.append("../awsjsondataset")
+from datetime import datetime
 import pytest
 from pathlib import Path
 from awsjsondataset.models import (
+    DatetimeEncoder,
     JsonDataset,
     BaseAwsJsonDataset,
     AwsJsonDataset
@@ -12,6 +14,24 @@ from tests.fixtures import *
 
 root_dir = Path(__file__).parent.parent
 test_data_dir = root_dir / "tests" / "test_data"
+
+# # Example class to write unit tests for
+# class DatetimeEncoder(json.JSONEncoder):
+#     """Extension of ``json.JSONEncoder`` to convert Python datetime objects to pure strings.
+
+#     Useful for responses from AWS service APIs. Does not convert timezone information.
+#     """
+
+#     def default(self, obj):
+#         try:
+#             return super().default(obj)
+#         except TypeError:
+#             return str(obj)
+
+# unit tests for DatetimeEncoder
+def test_datetime_encoder():
+    encoder = DatetimeEncoder()
+    assert encoder.default(datetime(2021, 1, 1, 0, 0, 0)) == "2021-01-01 00:00:00"
 
 def test_json_dataset_init():
 

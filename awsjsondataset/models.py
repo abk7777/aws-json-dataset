@@ -75,10 +75,12 @@ class JsonDataset:
         return max_record_size_bytes(self.data)
 
     def _read_local(self, path: JSONLocalPath) -> JSONDataset:
+        # TODO support for JSON lines format
+        # TODO support for multiple files
         with open(path, 'r') as f:
             data = json.load(f)
             if not isinstance(data, list):
-                raise InvalidJsonDataset()
+                data = [data]
 
         return data
 
@@ -143,3 +145,4 @@ class AwsJsonDataset(BaseAwsJsonDataset):
 
     def __repr__(self) -> str:
         return f"AwsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
+    

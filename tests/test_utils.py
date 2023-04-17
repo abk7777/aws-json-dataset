@@ -5,7 +5,9 @@ from awsjsondataset.exceptions import InvalidJsonDataset
 from awsjsondataset.utils import (
     get_record_size_bytes,
     sort_records_by_size_bytes,
-    validate_data
+    max_record_size_bytes,
+    validate_data,
+    get_available_services_by_limit
 )
 from tests.fixtures import *
 
@@ -27,3 +29,12 @@ def test_validate_data():
     data = [1, 2, 3]
     with pytest.raises(InvalidJsonDataset):
         validate_data(data)
+
+def test_max_record_size_bytes():
+    data = [{"a": 1}, {"b": 1234567891011}]
+    assert max_record_size_bytes(data) == 69
+
+def test_get_available_services_by_limit():
+    assert get_available_services_by_limit(max_record_size_bytes=1000) == ['sqs', 'sns', 'firehose']
+    assert get_available_services_by_limit(max_record_size_bytes=1000000) == ['firehose']
+
