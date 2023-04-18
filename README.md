@@ -8,6 +8,7 @@ Classes and methods for working with JSON data and AWS services.
   - [Project Structure](#project-structure)
   - [Description](#description)
     - [To Do](#to-do)
+      - [Next Steps](#next-steps)
     - [Ideas](#ideas)
   - [Quickstart](#quickstart)
   - [Installation](#installation)
@@ -46,6 +47,10 @@ Stream, publish and store JSON data to various AWS services including:
 - [ ] Add Kinesis Data Streams support
 - [ ] Add DynamoDB support
 - [ ] Add S3 support
+
+#### Next Steps
+- [ ] Package as a Python package and publish to PyPI
+- [ ] Set up CI/CD using GitHub actions and CodeBuild
 
 ### Ideas
 - Methods

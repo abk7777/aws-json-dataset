@@ -1,7 +1,9 @@
 pytest
-# pytest-mock
+pytest-cov
 coverage
+pre-commit
+mypy
+black
+tox
 boto3
-moto[sqs]
-# requests
-# requests-mock
+moto[sqs,sns,firehose,s3,sts]
