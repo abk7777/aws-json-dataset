@@ -112,12 +112,9 @@ docs/
 .editorconfig
 .travis.yml
 *.rst
-Makefile
 MANIFEST.in
-tox.ini
 requirements_dev.txt
 .github/
-setup.*
 
 # Project Files
 ___*
