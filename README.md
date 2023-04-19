@@ -8,6 +8,8 @@ Classes and methods for working with JSON data and AWS services.
   - [Project Structure](#project-structure)
   - [Description](#description)
     - [To Do](#to-do)
+      - [Next Steps](#next-steps)
+    - [Ideas](#ideas)
   - [Quickstart](#quickstart)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
@@ -16,7 +18,7 @@ Classes and methods for working with JSON data and AWS services.
     - [Environment Variables](#environment-variables)
     - [AWS Credentials](#aws-credentials)
   - [Troubleshooting](#troubleshooting)
-  - [References & Links](#references--links)
+  - [References \& Links](#references--links)
   - [Authors](#authors)
 
 ## Project Structure
@@ -26,36 +28,40 @@ Classes and methods for working with JSON data and AWS services.
 
 ## Description
 Stream, publish and store JSON data to various AWS services including:
-* SQS
-* SNS
-* Kinesis Firehose
-* Kinesis Data Streams
-* DynamoDB
-* S3
+- [x] SQS
+- [x] SNS
+- [x] Kinesis Firehose
+- [ ] Kinesis Data Streams
+- [ ] DynamoDB
+- [ ] S3
 
 ### To Do
-- [ ] ==Put service methods in utils.py as static methods, make this a separate package==
+- [x] ==Put service methods in utils.py as static methods, make this a separate package==
 - [x] Add SQS support
   - [x] `send_message`
   - [x] `send_messages`
-- [ ] ==Add SNS support==
-  - [ ] `publish`
-  - [ ] `publish_batch`
-- [ ] Add Kinesis Firehose support
+- [x] ==Add SNS support==
+  - [x] `publish`
+  - [x] `publish_batch`
+- [x] Add Kinesis Firehose support
 - [ ] Add Kinesis Data Streams support
 - [ ] Add DynamoDB support
 - [ ] Add S3 support
 
+#### Next Steps
+- [ ] Package as a Python package and publish to PyPI
+- [ ] Set up CI/CD using GitHub actions and CodeBuild
+
 ### Ideas
 - Methods
-    - set primary key (id), sort key
-    - add two instances together (union with no duplicates), or push()/pop() individual records
-    - subtract/find intersectio of two instances
-    - unmarshal ==> return generator of dataclass instance made from each record
-    - contains method that returns id
-    - filter method that filters by key
-    - map method to add new fields
-    - `in` method by id
+  - set primary key (id), sort key
+  - add two instances together (union with no duplicates), or push()/pop() individual records
+  - subtract/find intersectio of two instances
+  - unmarshal ==> return generator of dataclass instance made from each record
+  - contains method that returns id
+  - filter method that filters by key
+  - map method to add new fields
+  - `in` method by id
 - Use a dataclass to store state for the JSON dataset
 - optimization using slots? `__slots__`
 

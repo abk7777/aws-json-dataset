@@ -26,6 +26,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+_version.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -107,18 +108,7 @@ ENV/
 .vscode/
 .idea/
 
-## Python Packaging assets
-docs/
-.editorconfig
-.travis.yml
-*.rst
-Makefile
-MANIFEST.in
-tox.ini
-requirements_dev.txt
-.github/
-setup.*
-
 # Project Files
 ___*
 data/
+run.py

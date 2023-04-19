@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["awsjsondataset"]
+
+[tool.setuptools_scm]
+write_to = "awsjsondataset/_version.py"
+
+[project]
+name = "aws-json-dataset"
+version = "0.1.0"
+description = "Send JSON datasets to various AWS services."
+authors = [{ name = "Gregory Lindsey", email = "gclindsey@gmail.com" }]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["aws", "json", "dataset", "s3", "kinesis", "firehose", "sqs", "data", "streaming", "data engineering"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Data Engineers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Database",
+    "Topic :: Cloud",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities :: Data Processing",
+    "Topic :: Scientific/Engineering"
+]
+dependencies = [
+    "boto3>=1.20"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=21.12",
+]
+test = [
+    "pytest>=6.2",
+    "pytest-cov>=3.0",
+    "coverage>=6.0",
+    "black>=21.12",
+    "boto3>=1.20",
+    "moto[sqs,sns,firehose,s3,sts]>=2.2",
+]
+
+[tool.black]
+line-length = 79
+target-version = ['py310']
+preview = true
+
+[tool.coverage.report]
+skip_empty = true
+
+[tool.coverage.run]
+branch = true
+source = ["awsjsondataset"]

@@ -1,7 +1,0 @@
-pytest
-# pytest-mock
-coverage
-boto3
-moto[sqs]
-# requests
-# requests-mock

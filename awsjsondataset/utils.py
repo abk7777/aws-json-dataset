@@ -48,28 +48,28 @@ def validate_data(data: JSONDataset) -> List[Union[Dict, any]]:
     return data
 
 
-def get_available_services_by_limit(service, max_record_size_bytes):
+def get_available_services_by_limit(max_record_size_bytes):
     service_size_record_limits_bytes = { k: v["max_record_size_bytes"] for k, v in service_size_limits_bytes.items() }
     service_status = [ (k, max_record_size_bytes < v)  for k, v in service_size_record_limits_bytes.items() ]
     return [ x[0] for x in list(filter(lambda x: x[1] == True, service_status)) ]
 
 
-def validate_service(service: str, max_record_size_bytes: float) -> str:
-    if service not in available_services:
-        raise ValueError(f"Invalid service: {service}")
-    else:
-        available_services_by_limit = get_available_services_by_limit(service, max_record_size_bytes)
-        if service not in available_services_by_limit:
-            raise ServiceRecordSizeLimitExceeded(service, max_record_size_bytes)
-        else:
-            return service
+# def validate_service(service: str, max_record_size_bytes: float) -> str:
+#     if service not in available_services:
+#         raise ValueError(f"Invalid service: {service}")
+#     else:
+#         available_services_by_limit = get_available_services_by_limit(service, max_record_size_bytes)
+#         if service not in available_services_by_limit:
+#             raise ServiceRecordSizeLimitExceeded(service, max_record_size_bytes)
+#         else:
+#             return service
 
 
 # ### SQS ###
-# def queue_records(client, data: JSONDataset, sqs_queue_url: str):
+# def send_messages(client, data: JSONDataset, sqs_queue_url: str):
 
 #     if len(data) > 10:
-#         return queue_records_batch(client, data, sqs_queue_url)
+#         return send_message_batch(client, data, sqs_queue_url)
 #     else:
 #         counter = 0
 #         errors = 0
@@ -89,7 +89,7 @@ def validate_service(service: str, max_record_size_bytes: float) -> str:
 #         logger.info(f'{counter} messages queued to {sqs_queue_url}')
 
 
-# def queue_records_batch(client, data: JSONDataset, sqs_queue_url: str):
+# def send_message_batch(client, data: JSONDataset, sqs_queue_url: str):
 
 #     if len(data) < 10:
 #         raise Exception("Batch size must be greater than 10")
@@ -166,7 +166,7 @@ def validate_service(service: str, max_record_size_bytes: float) -> str:
 #         logger.error(e)
 #         raise e
 
-# def publish_records_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
+# def publish_messages_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
 #     """Send a batch of messages in a single request to an SNS topic.
 #     This request may return overall success even when some messages were not published.
 #     The caller must inspect the Successful and Failed lists in the response and
@@ -307,11 +307,11 @@ def validate_service(service: str, max_record_size_bytes: float) -> str:
 #     batch = []
 #     batch_bytes = 0
 #     counter = 0
-#     max_bytes = service_size_limits_bytes["kinesis_firehose"]["max_batch_size_bytes"]
+#     max_bytes = service_size_limits_bytes["firehose"]["max_batch_size_bytes"]
 
 #     # Kinesis API accepts a max batch size of 500 max payload size of 5 megabytes
 #     for idx, record in enumerate(records):
-#         if get_record_size_bytes(record) > service_size_limits_bytes["kinesis_firehose"]["max_record_size_bytes"]:
+#         if get_record_size_bytes(record) > service_size_limits_bytes["firehose"]["max_record_size_bytes"]:
 #             raise Exception("Record size must be less than 1 megabyte")
 
 #         if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 500):

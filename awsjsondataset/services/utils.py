@@ -16,19 +16,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 ### SQS ###
-def queue_records(client, records: JSONDataset, queue_url: str):
+def send_messages(client, messages: JSONDataset, queue_url: str):
 
-    if len(records) > 10:
-        return queue_records_batch(client, records, queue_url)
+    if len(messages) > 10:
+        return send_message_batch(client, messages, queue_url)
     else:
         counter = 0
         errors = 0
 
-        for record in records:
+        for message in messages:
             counter += 1
             response = client.send_message(
                 QueueUrl=queue_url,
-                MessageBody=json.dumps(record)
+                MessageBody=json.dumps(message)
             )
 
             if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
@@ -39,9 +39,9 @@ def queue_records(client, records: JSONDataset, queue_url: str):
         logger.info(f'{counter} messages queued to {queue_url}')
 
 
-def queue_records_batch(client, data: JSONDataset, queue_url: str):
+def send_message_batch(client, messages: JSONDataset, queue_url: str):
 
-    if len(data) < 10:
+    if len(messages) < 10:
         raise Exception("Batch size must be greater than 10")
 
     batch = []
@@ -50,7 +50,7 @@ def queue_records_batch(client, data: JSONDataset, queue_url: str):
     max_bytes = service_size_limits_bytes["sqs"]["max_record_size_bytes"]
 
     # SQS API accepts a max batch size of 10 max payload size of 256 kilobytes
-    for idx, record in enumerate(data):
+    for idx, record in enumerate(messages):
         if get_record_size_bytes(record) > service_size_limits_bytes["sqs"]["max_record_size_bytes"]:
             raise Exception(f'Record size must be less than {service_size_limits_bytes["sqs"]["max_record_size_bytes"]} bytes')
 
@@ -116,7 +116,7 @@ def publish_record(client, message: dict, topic_arn: str):
         logger.error(e)
         raise e
 
-def publish_records_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
+def publish_messages_batch(client, messages: list, topic_arn: str, message_attributes: list = None) -> dict:
     """Send a batch of messages in a single request to an SNS topic.
     This request may return overall success even when some messages were not published.
     The caller must inspect the Successful and Failed lists in the response and
@@ -257,11 +257,11 @@ def put_records_batch(client, stream_name: str, records: list) -> Dict:
     batch = []
     batch_bytes = 0
     counter = 0
-    max_bytes = service_size_limits_bytes["kinesis_firehose"]["max_batch_size_bytes"]
+    max_bytes = service_size_limits_bytes["firehose"]["max_batch_size_bytes"]
 
     # Kinesis API accepts a max batch size of 500 max payload size of 5 megabytes
     for idx, record in enumerate(records):
-        if get_record_size_bytes(record) > service_size_limits_bytes["kinesis_firehose"]["max_record_size_bytes"]:
+        if get_record_size_bytes(record) > service_size_limits_bytes["firehose"]["max_record_size_bytes"]:
             raise Exception("Record size must be less than 1 megabyte")
 
         if (batch_bytes + get_record_size_bytes(record) < max_bytes) and (len(batch) < 500):
@@ -307,3 +307,4 @@ def put_records_batch(client, stream_name: str, records: list) -> Dict:
 
         if counter != idx+1:
             raise MissingRecords(expected=idx+1, actual=counter)
+        

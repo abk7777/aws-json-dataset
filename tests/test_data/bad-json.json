@@ -1,0 +1,7 @@
+{
+  "id": "1",
+  "name": "product name",
+  "price": "100",
+  "description": "product description",
+  "image": "https://example.com/image.jpg"
+}
