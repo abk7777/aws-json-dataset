@@ -4,14 +4,13 @@ from pathlib import Path
 from functools import cached_property
 import json
 from awsjsondataset.types import JSONDataset, JSONLocalPath
-from awsjsondataset.exceptions import InvalidJsonDataset
 from awsjsondataset.utils import (
     sort_records_by_size_bytes, 
     max_record_size_bytes,
     validate_data,
     get_available_services_by_limit
 )
-from awsjsondataset.aws.models import aws_service_class_map
+from awsjsondataset.services.models import aws_service_class_map
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -43,7 +42,7 @@ class JsonDataset:
         num_records (int): The number of records in the dataset.
 
     Raises:
-        InvalidJsonDataset: Raised when an invalid dataset type is passed.
+        TypeError: If both ``data`` and ``path`` are passed.
     """
 
     # trying slots for more speed

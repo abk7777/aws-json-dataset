@@ -1,10 +1,10 @@
 # Python models to wrap AWS services including S3, SNS, SQS, and Firehose
-# Methods are available in awsjsondataset.aws.utils
+# Methods are available in awsjsondataset.services.utils
 import os
 import logging
 from functools import cached_property
 import boto3
-from awsjsondataset.aws.utils import (
+from awsjsondataset.services.utils import (
     send_messages,
     publish_messages_batch,
     put_records_batch
