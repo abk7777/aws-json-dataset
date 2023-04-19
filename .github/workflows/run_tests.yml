@@ -1,5 +1,4 @@
 name: Run Tests
-
 on:
   push:
     branches:
@@ -7,35 +6,29 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.10
-
-    - name: Install dependencies
-      run: |
-        pip install -e .[test]
-
-    - name: Run tests with coverage
-      run: |
-        coverage run -m pytest tests -v
-
-    - name: Generate coverage report
-      run: |
-        coverage report
-        coverage xml
-
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
-        fail_ci_if_error: true
+      - name: Check out
+        uses: actions/checkout@v3
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+      - name: Install dependencies
+        run: |
+          pip install -e .[test]
+      - name: Run tests with coverage
+        run: |
+          coverage run -m pytest tests -v
+      - name: Generate coverage report
+        run: |
+          coverage report
+          coverage xml
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: true
