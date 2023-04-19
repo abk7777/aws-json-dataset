@@ -1,9 +1,0 @@
-pytest
-pytest-cov
-coverage
-pre-commit
-mypy
-black
-tox
-boto3
-moto[sqs,sns,firehose,s3,sts]
