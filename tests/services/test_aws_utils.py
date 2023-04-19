@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../awsjsondataset")
 import pytest
-from awsjsondataset.aws.utils import (
+from awsjsondataset.services.utils import (
     send_messages,
     send_message_batch,
     publish_record,

@@ -108,6 +108,7 @@ ENV/
 .idea/
 
 ## Python Packaging assets
+_version.py
 docs/
 .editorconfig
 .travis.yml
@@ -119,3 +120,4 @@ requirements_dev.txt
 # Project Files
 ___*
 data/
+run.py

@@ -2,7 +2,7 @@ import sys
 sys.path.append("../awsjsondataset")
 import pytest
 from pathlib import Path
-from awsjsondataset.aws.models import (
+from awsjsondataset.services.models import (
     AwsServiceBase,
     SqsQueue,
     SnsTopic,
