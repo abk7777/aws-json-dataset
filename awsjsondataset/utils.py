@@ -34,6 +34,7 @@ def max_record_size_bytes(data: JSONDataset):
     return max([ item[1] for item in sort_records_by_size_bytes(data=data, ascending=False) ])
 
 
+# TODO handle iterators
 def validate_data(data: JSONDataset) -> List[Union[Dict, any]]:
     """Validate that a list of records is a list of dictionaries.
     

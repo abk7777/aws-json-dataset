@@ -1,5 +1,5 @@
 import logging
-from typing import Iterator, Optional
+from typing import Optional
 from pathlib import Path
 from functools import cached_property
 import json
@@ -113,7 +113,7 @@ class JsonDataset:
         return self.num_records
 
     def __repr__(self) -> str:
-        return f"JsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
+        return f"JsonDataset()"
 
 
 class BaseAwsJsonDataset(JsonDataset):
@@ -130,7 +130,7 @@ class BaseAwsJsonDataset(JsonDataset):
         return get_available_services_by_limit(self._max_record_size_bytes)
 
     def __repr__(self) -> str:
-        return f"BaseAwsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
+        return f"BaseAwsJsonDataset()"
 
 
 class AwsJsonDataset(BaseAwsJsonDataset):
@@ -143,5 +143,5 @@ class AwsJsonDataset(BaseAwsJsonDataset):
             setattr(self.__getattribute__(item), 'data', self.data)
 
     def __repr__(self) -> str:
-        return f"AwsJsonDataset(data='{json.dumps(self.data)[:30]}...',path='{str(self.path)}',num_records='{self.num_records}')"
+        return f"AwsJsonDataset()"
     
