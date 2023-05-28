@@ -1,5 +1,5 @@
 # aws-json-dataset
-[![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg) ![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg)](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml)[![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 
 Lightweight and simple Python package to quickly send JSON data to various AWS services.
 ## Description
@@ -25,7 +25,7 @@ This library includes functionality for:
 ## Quickstart
 Install the library using pip.
 ```bash
-pip install aws-json-dataset
+pip install -i https://test.pypi.org/simple/ aws-json-dataset
 ```
 
 Export the AWS region to the environment.
