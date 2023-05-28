@@ -1,5 +1,4 @@
 # aws-json-dataset
-
 Classes and methods for working with JSON data and AWS services.
 
 ## Table of Contents
@@ -21,93 +20,75 @@ Classes and methods for working with JSON data and AWS services.
   - [References \& Links](#references--links)
   - [Authors](#authors)
 
-## Project Structure
-```bash
-
-```
-
 ## Description
-Stream, publish and store JSON data to various AWS services including:
-- [x] SQS
-- [x] SNS
-- [x] Kinesis Firehose
-- [ ] Kinesis Data Streams
-- [ ] DynamoDB
-- [ ] S3
+Lightweight Python package to quickly send JSON data to various AWS services including:
+- SQS
+- SNS
+- Kinesis Firehose
+<!-- - Kinesis Data Streams -->
 
-### To Do
-- [x] ==Put service methods in utils.py as static methods, make this a separate package==
-- [x] Add SQS support
-  - [x] `send_message`
-  - [x] `send_messages`
-- [x] ==Add SNS support==
-  - [x] `publish`
-  - [x] `publish_batch`
-- [x] Add Kinesis Firehose support
-- [ ] Add Kinesis Data Streams support
-- [ ] Add DynamoDB support
-- [ ] Add S3 support
+The idea behind developing this library was to create an easy, quick way to send JSON data to AWS services. JSON is an extremely common format and each AWS service has it's own API with different requirements for how to send data. `aws-json-dataset` will automatically handle batch calls when available and includes functionality to avoid exceeding service memory limits.
 
-#### Next Steps
-- [ ] Package as a Python package and publish to PyPI
-- [ ] Set up CI/CD using GitHub actions and CodeBuild
-
-### Ideas
-- Methods
-  - set primary key (id), sort key
-  - add two instances together (union with no duplicates), or push()/pop() individual records
-  - subtract/find intersectio of two instances
-  - unmarshal ==> return generator of dataclass instance made from each record
-  - contains method that returns id
-  - filter method that filters by key
-  - map method to add new fields
-  - `in` method by id
-- Use a dataclass to store state for the JSON dataset
-- optimization using slots? `__slots__`
+### Roadmap
+- [ ] Support for Kinesis Data Streams
+- [ ] Support for DynamoDB inserts, updates and deletes
+- [ ] Support for S3, including gzip compression and JSON lines format
+- [ ] Support for FIFO SQS queues ad SNS topics
 
 ## Quickstart
+Install the library using pip.
+```bash
+pip install aws-json-dataset
+```
 
-## Installation
-Follow the steps to set the deployment environment.
+Export the AWS region to the environment.
+```bash
+export AWS_REGION=<region>
+```
+
+Send JSON data to various AWS services.
+```python
+from awsjsondataset import AwsJsonDataset
+
+# create a list of JSON objects
+data = [ {"id": idx, "name": "<data>"} for idx in range(100) ]
+
+# Wrap using AwsJsonDataset
+dataset = AwsJsonDataset(data=data)
+
+# Send to SQS queue
+dataset.sqs("<sqs_queue_url>").send_messages()
+
+# Send to SNS topic
+dataset.sns("<sns_topic_arn>").publish_messages()
+
+# Send to Kinesis Firehose stream
+dataset.firehose("<delivery_stream_name>").put_records()
+```
+
+## Local Development
+Follow the steps to set up the deployment environment.
 
 ### Prerequisites
-* Python 3.9
+* Python 3.10
 * AWS credentials
 
 ### Creating a Python Virtual Environment
 When developing locally, create a Python virtual environment to manage dependencies:
 ```bash
-python3 -m venv .venv-dev
-source .venv-dev/bin/activate
+python3.10 -m venv .venv
+source .venv/bin/activate
 pip install -U pip
-pip install -r requirements-dev.txt
-```
-
-### Notebook Setup
-To use the virtual environment inside Jupyter Notebook, first activate the virtual environment, then create a kernel for it.
-```bash
-# Install ipykernal and dot-env
-pip install ipykernel python-dotenv jupyterthemes
-
-# Add the kernel
-python3 -m ipykernel install --user --name=<environment name>
-
-# Delete the kernel
-jupyter kernelspec uninstall <environment name>
+pip install -r requirements.txt
 ```
 
 ### Environment Variables
-
-Sensitive environment variables containing secrets like passwords and API keys must be exported to the environment first.
-
 Create a `.env` file in the project root.
 ```bash
 AWS_REGION=<region>
 ```
 
-***Important:*** *Always use a `.env` file or AWS SSM Parameter Store or Secrets Manager for sensitive variables like credentials and API keys. Never hard-code them, including when developing. AWS will quarantine an account if any credentials get accidentally exposed and this will cause problems.*
-
-***Make sure that `.env` is listed in `.gitignore`***
+***Important:*** *Always use a `.env` file or AWS SSM Parameter Store or Secrets Manager for sensitive variables like credentials and API keys. Never hard-code them, including when developing. AWS will quarantine an account if any credentials get accidentally exposed and this will cause problems.* &rarr; ***Make sure that `.env` is listed in `.gitignore`***
 
 ### AWS Credentials
 Valid AWS credentials must be available to AWS CLI and SAM CLI. The easiest way to do this is running `aws configure`, or by adding them to `~/.aws/credentials` and exporting the `AWS_PROFILE` variable to the environment.
@@ -115,29 +96,7 @@ Valid AWS credentials must be available to AWS CLI and SAM CLI. The easiest way 
 For more information visit the documentation page:
 [Configuration and credential file settings](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 
-<!-- ## AWS Deployment
-Once an AWS profile is configured and environment variables are exported, the application can be deployed using `make`.
-```bash
-make deploy
-```
-
-## Makefile Usage
-```bash
-# Deploy all layers
-make deploy
-
-# Delete all layers (data in S3 must be deleted manually first)
-make delete
-
-# Deploy only one layer
-make emr.deploy
-
-# Delete only one layer
-make emr.delete
-```
-
-## Testing
-### Unit Tests
+## Unit Tests
 Create a Python virtual environment to manage test dependencies.
 
 ```bash
@@ -149,14 +108,17 @@ pip install -r requirements-tests.txt
 Run tests with the following command.
 ```bash
 coverage run -m pytest
-``` -->
+```
 
 ## Troubleshooting
 * Check your AWS credentials in `~/.aws/credentials`
 * Check that the environment variables are available to the services that need them
 * Check that the correct environment or interpreter is being used for Python
 
-## References & Links
+<!-- ## References & Links -->
 
 ## Authors
 **Primary Contact:** Gregory Lindsey (@abk7777)
+
+## License
+This library is licensed under the MIT-0 License. See the LICENSE file.
