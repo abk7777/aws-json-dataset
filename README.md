@@ -1,5 +1,5 @@
 # aws-json-dataset
-[![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg)](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml)[![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg)](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml) [![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 
 Lightweight and simple Python package to quickly send JSON data to various AWS services.
 ## Description
@@ -66,7 +66,7 @@ When developing locally, create a Python virtual environment to manage dependenc
 python3.10 -m venv .venv
 source .venv/bin/activate
 pip install -U pip
-pip install -r requirements.txt
+pip install .[dev,test]
 ```
 
 ### Environment Variables
@@ -84,15 +84,7 @@ For more information visit the documentation page:
 [Configuration and credential file settings](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
 
 ## Unit Tests
-Create a Python virtual environment to manage test dependencies.
-
-```bash
-python3 -m venv .venv-test
-source .venv-test/bin/activate
-pip install -U pip
-pip install -r requirements-tests.txt
-```
-Run tests with the following command.
+Follow the steps above to create a Python virtual environment. Run tests with the following command.
 ```bash
 coverage run -m pytest
 ```
