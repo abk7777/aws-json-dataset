@@ -1,35 +1,20 @@
 # aws-json-dataset
-[![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset) ![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg) ![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 
-Classes and methods for working with JSON data and AWS services.
-
-## Table of Contents
-- [aws-json-dataset](#aws-json-dataset)
-  - [Table of Contents](#table-of-contents)
-  - [Project Structure](#project-structure)
-  - [Description](#description)
-    - [To Do](#to-do)
-      - [Next Steps](#next-steps)
-    - [Ideas](#ideas)
-  - [Quickstart](#quickstart)
-  - [Installation](#installation)
-    - [Prerequisites](#prerequisites)
-    - [Creating a Python Virtual Environment](#creating-a-python-virtual-environment)
-    - [Notebook Setup](#notebook-setup)
-    - [Environment Variables](#environment-variables)
-    - [AWS Credentials](#aws-credentials)
-  - [Troubleshooting](#troubleshooting)
-  - [References \& Links](#references--links)
-  - [Authors](#authors)
-
+Lightweight and simple Python package to quickly send JSON data to various AWS services.
 ## Description
-Lightweight Python package to quickly send JSON data to various AWS services including:
+The idea behind this library is to create an easy, quick way to send JSON data to AWS services.
 - SQS
 - SNS
 - Kinesis Firehose
-<!-- - Kinesis Data Streams -->
+- Kinesis Data Streams (coming soon)
 
-The idea behind developing this library was to create an easy, quick way to send JSON data to AWS services. JSON is an extremely common format and each AWS service has it's own API with different requirements for how to send data. `aws-json-dataset` will automatically handle batch calls when available and includes functionality to avoid exceeding service memory limits.
+JSON is an extremely common format and each AWS service has it's own API with different requirements for how to send data. 
+
+This library includes functionality for:
+- Automatically handling batch API calls 
+- Manages available services based on record size
+- Base64 conversion for Kinesis streams
 
 ### Roadmap
 - [ ] Support for Kinesis Data Streams
