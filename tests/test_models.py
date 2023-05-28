@@ -9,26 +9,12 @@ from awsjsondataset.models import (
     BaseAwsJsonDataset,
     AwsJsonDataset
 )
-from awsjsondataset.exceptions import InvalidJsonDataset, ServiceRecordSizeLimitExceeded
+from awsjsondataset.exceptions import InvalidJsonDataset
 from tests.fixtures import *
 
 root_dir = Path(__file__).parent.parent
 test_data_dir = root_dir / "tests" / "test_data"
 
-# # Example class to write unit tests for
-# class DatetimeEncoder(json.JSONEncoder):
-#     """Extension of ``json.JSONEncoder`` to convert Python datetime objects to pure strings.
-
-#     Useful for responses from AWS service APIs. Does not convert timezone information.
-#     """
-
-#     def default(self, obj):
-#         try:
-#             return super().default(obj)
-#         except TypeError:
-#             return str(obj)
-
-# unit tests for DatetimeEncoder
 def test_datetime_encoder():
     encoder = DatetimeEncoder()
     assert encoder.default(datetime(2021, 1, 1, 0, 0, 0)) == "2021-01-01 00:00:00"
@@ -127,33 +113,25 @@ def test_aws_json_dataset_available_services():
     dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
     assert "sqs" in dataset.available_services
 
-    # # sqs over size limit
-    # with pytest.raises(ServiceRecordSizeLimitExceeded):
-    #     dataset = BaseAwsJsonDataset(data=[{"a": "value"*100000}])
+    dataset = BaseAwsJsonDataset(data=[{"a": "value"*1000000}])
+    assert "sqs" not in dataset.available_services
 
     # sns within size limit
     dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
     assert "sns" in dataset.available_services
 
-    # # sns over size limit
-    # with pytest.raises(ServiceRecordSizeLimitExceeded):
-    #     dataset = BaseAwsJsonDataset(data=[{"a": "value"*100000}])
+    # sns above size limit
+    dataset = BaseAwsJsonDataset(data=[{"a": "value"*100000}])
+    assert "sns" not in dataset.available_services
 
     # kinesis within size limit
     dataset = BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
     assert "firehose" in dataset.available_services
 
-    # # kinesis over size limit
-    # with pytest.raises(ServiceRecordSizeLimitExceeded):
-    #     dataset = BaseAwsJsonDataset(data=[{"a": "value"*1050000}])
+    # kinesis above size limit
+    dataset = BaseAwsJsonDataset(data=[{"a": "value"*1050000}])
+    assert "firehose" not in dataset.available_services
 
-def test_aws_json_dataset_validate_service():
-    # test valid service
-    assert BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
-
-    # # test invalid service
-    # with pytest.raises(ValueError):
-    #     BaseAwsJsonDataset(data=[{"a": 1}, {"b": 2}])
 
 def test_aws_json_dataset_init():
     dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}])
@@ -246,8 +224,3 @@ def test_aws_json_dataset_kinesis_firehose_put_records(s3, firehose):
     # large batch size
     dataset = AwsJsonDataset(data=[{"a": 1}, {"b": 2}]*100)
     assert dataset.firehose(DELIVERY_STREAM_NAME).put_records() is None
-
-    # TODO test that service is not in available services if records is too large
-    # # kinesis over size limit
-    # with pytest.raises(ServiceRecordSizeLimitExceeded):
-    #     dataset = AwsJsonDataset(data=[{"a": "value"*1050000}])
