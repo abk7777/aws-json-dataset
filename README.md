@@ -1,4 +1,6 @@
 # aws-json-dataset
+[![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset) ![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Classes and methods for working with JSON data and AWS services.
 
 ## Table of Contents
