@@ -35,12 +35,12 @@ dev = [
     "black>=21.12",
 ]
 test = [
-    "pytest>=6.2",
-    "pytest-cov>=3.0",
-    "coverage>=6.0",
-    "black>=21.12",
-    "boto3>=1.20",
-    "moto[sqs,sns,firehose,s3,sts]>=2.2",
+    "pytest~=7.4.0",
+    "pytest-cov~=4.1.0",
+    "coverage~=7.2.7",
+    "black~=23.1.0",
+    "boto3~=1.28.20",
+    "moto[sqs,sns,firehose,s3,sts]~=4.1.14",
 ]
 
 [tool.black]

@@ -36,7 +36,7 @@ export AWS_REGION=<region>
 
 Install the library using pip.
 ```bash
-pip install -i https://test.pypi.org/simple/ aws-json-dataset
+pip install aws-json-dataset
 ```
 
 Send JSON data to various AWS services.
@@ -103,7 +103,7 @@ coverage run -m pytest
 <!-- ## References & Links -->
 
 ## Authors
-**Primary Contact:** Gregory Lindsey (@chrisammon3000)
+**Primary Contact:** Gregory Christopher Lindsey (@chrisammon3000)
 
 ## License
 This library is licensed under the MIT-0 License. See the LICENSE file.
