@@ -1,7 +1,10 @@
 # aws-json-dataset
-[![Build](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg)](https://github.com/abk7777/aws-json-dataset/actions/workflows/run_tests.yml) [![codecov](https://codecov.io/github/abk7777/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/abk7777/aws-json-dataset) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Build](https://github.com/chrisammon3000/aws-json-dataset/actions/workflows/run_tests.yml/badge.svg?style=for-the-badge)](https://github.com/chrisammon3000/aws-json-dataset/actions/workflows/run_tests.yml) [![codecov](https://codecov.io/github/chrisammon3000/aws-json-dataset/branch/main/graph/badge.svg?token=QSZLP51RWJ)](https://codecov.io/github/chrisammon3000/aws-json-dataset?style=for-the-badge) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 
-Lightweight and simple Python package to quickly send JSON data to various AWS services.
+<!-- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT) [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg?style=for-the-badge)](https://www.python.org/downloads/release/python-3100/) -->
+
+Lightweight and simple Python package to quickly send batches of JSON data to various AWS services.
+
 ## Description
 The idea behind this library is to create an easy, quick way to send JSON data to AWS services.
 - SQS
@@ -12,7 +15,7 @@ The idea behind this library is to create an easy, quick way to send JSON data t
 JSON is an extremely common format and each AWS service has it's own API with different requirements for how to send data. 
 
 This library includes functionality for:
-- Automatically handling batch API calls 
+- Automatically handling batch API calls to SNS, SQS and Kinesis Firehose
 - Manages available services based on record size
 - Base64 conversion for Kinesis streams
 
@@ -20,17 +23,20 @@ This library includes functionality for:
 - [ ] Support for Kinesis Data Streams
 - [ ] Support for DynamoDB inserts, updates and deletes
 - [ ] Support for S3, including gzip compression and JSON lines format
-- [ ] Support for FIFO SQS queues ad SNS topics
+- [ ] Support for FIFO SQS queues
+- [ ] Support for SNS topics
 
 ## Quickstart
+Set up your [AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html) and environment variables and export them to the environment.
+```bash
+export AWS_PROFILE=<profile>
+export AWS_REGION=<region>
+```
+
+
 Install the library using pip.
 ```bash
 pip install -i https://test.pypi.org/simple/ aws-json-dataset
-```
-
-Export the AWS region to the environment.
-```bash
-export AWS_REGION=<region>
 ```
 
 Send JSON data to various AWS services.
@@ -38,7 +44,7 @@ Send JSON data to various AWS services.
 from awsjsondataset import AwsJsonDataset
 
 # create a list of JSON objects
-data = [ {"id": idx, "name": "<data>"} for idx in range(100) ]
+data = [ {"id": idx, "data": "<data>"} for idx in range(100) ]
 
 # Wrap using AwsJsonDataset
 dataset = AwsJsonDataset(data=data)
@@ -57,8 +63,8 @@ dataset.firehose("<delivery_stream_name>").put_records()
 Follow the steps to set up the deployment environment.
 
 ### Prerequisites
-* Python 3.10
 * AWS credentials
+* Python 3.10
 
 ### Creating a Python Virtual Environment
 When developing locally, create a Python virtual environment to manage dependencies:
@@ -97,7 +103,7 @@ coverage run -m pytest
 <!-- ## References & Links -->
 
 ## Authors
-**Primary Contact:** Gregory Lindsey (@abk7777)
+**Primary Contact:** Gregory Lindsey (@chrisammon3000)
 
 ## License
 This library is licensed under the MIT-0 License. See the LICENSE file.
